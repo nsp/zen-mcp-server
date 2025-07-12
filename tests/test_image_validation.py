@@ -301,3 +301,20 @@ class TestProviderIntegration:
         assert result is not None
         assert result["type"] == "image_url"
         assert result["image_url"]["url"] == data_url
+
+    @patch.dict(os.environ, {"VERTEX_AI_PROJECT_ID": "test-project"})
+    @patch("utils.credential_manager.default")
+    def test_vertex_ai_provider_uses_validation(self, mock_default: Mock) -> None:
+        """Test that Vertex AI provider uses the base validation."""
+        # Mock credentials
+        mock_credentials = Mock()
+        mock_default.return_value = (mock_credentials, None)
+
+        from providers.vertex_ai import VertexAIModelProvider
+
+        # Create a provider instance
+        provider = VertexAIModelProvider(api_key="test-key")
+
+        # Test with non-existent file
+        with pytest.raises(ValueError, match="Image file not found"):
+            provider.validate_image("/nonexistent/image.png")

@@ -6,6 +6,7 @@ from .openai_compatible import OpenAICompatibleProvider
 from .openai_provider import OpenAIModelProvider
 from .openrouter import OpenRouterProvider
 from .registry import ModelProviderRegistry
+from .vertex_ai import VertexAIModelProvider
 
 __all__ = [
     "ModelProvider",
@@ -16,4 +17,5 @@ __all__ = [
     "OpenAIModelProvider",
     "OpenAICompatibleProvider",
     "OpenRouterProvider",
+    "VertexAIModelProvider",
 ]

@@ -77,6 +77,75 @@ def project_path(tmp_path):
     return test_dir
 
 
+# Shared test image fixtures
+@pytest.fixture
+def test_image_data():
+    """Standard 1x1 PNG image data for testing."""
+    import base64
+
+    return base64.b64decode(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
+    )
+
+
+@pytest.fixture
+def test_image_data_url(test_image_data):
+    """Standard data URL for image testing."""
+    import base64
+
+    return f"data:image/png;base64,{base64.b64encode(test_image_data).decode()}"
+
+
+@pytest.fixture
+def large_test_data():
+    """Large test data (21MB) for size limit testing."""
+    return b"x" * (21 * 1024 * 1024)
+
+
+@pytest.fixture
+def temp_image_file(test_image_data):
+    """Create a temporary image file with test data."""
+    import os
+    import tempfile
+
+    with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp_file:
+        tmp_file.write(test_image_data)
+        tmp_file_path = tmp_file.name
+
+    yield tmp_file_path
+
+    # Cleanup
+    try:
+        os.unlink(tmp_file_path)
+    except FileNotFoundError:
+        pass  # Already cleaned up
+
+
+@pytest.fixture
+def temp_file_factory():
+    """Factory for creating temporary files with custom data and extensions."""
+    import os
+    import tempfile
+
+    created_files = []
+
+    def _create_temp_file(data=b"dummy data", suffix=".txt"):
+        with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp_file:
+            tmp_file.write(data)
+            tmp_file_path = tmp_file.name
+        created_files.append(tmp_file_path)
+        return tmp_file_path
+
+    yield _create_temp_file
+
+    # Cleanup all created files
+    for file_path in created_files:
+        try:
+            os.unlink(file_path)
+        except FileNotFoundError:
+            pass
+
+
 # Pytest configuration
 def pytest_configure(config):
     """Configure pytest with custom markers"""

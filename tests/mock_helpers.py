@@ -1,8 +1,9 @@
 """Helper functions for test mocking."""
 
+from typing import Optional
 from unittest.mock import Mock
 
-from providers.base import ModelCapabilities, ProviderType, RangeTemperatureConstraint
+from providers.base import ModelCapabilities, ModelProvider, ModelResponse, ProviderType, RangeTemperatureConstraint
 
 
 def create_mock_provider(model_name="gemini-2.5-flash", context_window=1_048_576):
@@ -40,3 +41,39 @@ def create_mock_provider(model_name="gemini-2.5-flash", context_window=1_048_576
     mock_provider.generate_content.return_value = mock_response
 
     return mock_provider
+
+
+class MinimalTestProvider(ModelProvider):
+    """Minimal concrete provider for testing base class methods."""
+
+    def get_capabilities(self, model_name: str) -> ModelCapabilities:
+        """Not needed for image validation tests."""
+        raise NotImplementedError("Not needed for image validation tests")
+
+    def generate_content(
+        self,
+        prompt: str,
+        model_name: str,
+        system_prompt: Optional[str] = None,
+        temperature: float = 0.7,
+        max_output_tokens: Optional[int] = None,
+        **kwargs,
+    ) -> ModelResponse:
+        """Not needed for image validation tests."""
+        raise NotImplementedError("Not needed for image validation tests")
+
+    def count_tokens(self, text: str, model_name: str) -> int:
+        """Not needed for image validation tests."""
+        raise NotImplementedError("Not needed for image validation tests")
+
+    def get_provider_type(self) -> ProviderType:
+        """Not needed for image validation tests."""
+        raise NotImplementedError("Not needed for image validation tests")
+
+    def validate_model_name(self, model_name: str) -> bool:
+        """Not needed for image validation tests."""
+        raise NotImplementedError("Not needed for image validation tests")
+
+    def supports_thinking_mode(self, model_name: str) -> bool:
+        """Not needed for image validation tests."""
+        raise NotImplementedError("Not needed for image validation tests")

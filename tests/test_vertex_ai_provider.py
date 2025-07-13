@@ -104,43 +104,45 @@ class TestUnifiedVertexAIProvider:
             capabilities = provider.get_capabilities("vertex-sonnet-4")
             assert capabilities.model_name == "claude-sonnet-4@20250514"
 
+    @pytest.mark.parametrize(
+        "model_name,expected_valid",
+        [
+            ("gemini-1.5-pro-002", True),
+            ("vertex-pro", True),  # Alias
+            ("claude-sonnet-4@20250514", True),
+            ("vertex-sonnet-4", True),  # Alias
+            ("unknown-model", False),
+        ],
+    )
     @patch("utils.credential_manager.default")
     @patch("providers.vertex_ai.vertexai")
-    def test_validate_model_name(self, mock_vertexai, mock_default):
+    def test_validate_model_name(self, mock_vertexai, mock_default, model_name, expected_valid):
         """Test model name validation"""
         mock_credentials = Mock()
         mock_default.return_value = (mock_credentials, None)
 
         with patch.dict(os.environ, {"VERTEX_AI_PROJECT_ID": "test-project"}):
             provider = VertexAIModelProvider()
+            assert provider.validate_model_name(model_name) == expected_valid
 
-            # Valid Gemini models
-            assert provider.validate_model_name("gemini-1.5-pro-002") is True
-            assert provider.validate_model_name("vertex-pro") is True  # Alias
-
-            # Valid Claude models
-            assert provider.validate_model_name("claude-sonnet-4@20250514") is True
-            assert provider.validate_model_name("vertex-sonnet-4") is True  # Alias
-
-            # Invalid model
-            assert provider.validate_model_name("unknown-model") is False
-
+    @pytest.mark.parametrize(
+        "model_name,expected_support",
+        [
+            ("gemini-1.5-pro-002", False),
+            ("gemini-2.5-pro", True),
+            ("claude-sonnet-4@20250514", False),
+        ],
+    )
     @patch("utils.credential_manager.default")
     @patch("providers.vertex_ai.vertexai")
-    def test_supports_thinking_mode(self, mock_vertexai, mock_default):
+    def test_supports_thinking_mode(self, mock_vertexai, mock_default, model_name, expected_support):
         """Test thinking mode support check"""
         mock_credentials = Mock()
         mock_default.return_value = (mock_credentials, None)
 
         with patch.dict(os.environ, {"VERTEX_AI_PROJECT_ID": "test-project"}):
             provider = VertexAIModelProvider()
-
-            # Gemini models
-            assert provider.supports_thinking_mode("gemini-1.5-pro-002") is False
-            assert provider.supports_thinking_mode("gemini-2.5-pro") is True
-
-            # Claude models don't support thinking mode
-            assert provider.supports_thinking_mode("claude-sonnet-4@20250514") is False
+            assert provider.supports_thinking_mode(model_name) == expected_support
 
     @patch("utils.credential_manager.default")
     @patch("providers.vertex_ai.vertexai")

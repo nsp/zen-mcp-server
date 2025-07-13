@@ -68,7 +68,7 @@ class TestUnifiedVertexAIProvider:
 
             # Test Gemini alias
             capabilities = provider.get_capabilities("vertex-pro")
-            assert capabilities.model_name == "gemini-1.5-pro-002"
+            assert capabilities.model_name == "gemini-2.5-pro"
 
     @patch("utils.credential_manager.default")
     @patch("providers.vertex_ai.vertexai")
@@ -88,7 +88,7 @@ class TestUnifiedVertexAIProvider:
             assert capabilities.supports_images is True
 
             # Test Claude alias
-            capabilities = provider.get_capabilities("sonnet-4")
+            capabilities = provider.get_capabilities("vertex-sonnet-4")
             assert capabilities.model_name == "claude-sonnet-4@20250514"
 
     @patch("utils.credential_manager.default")
@@ -107,7 +107,7 @@ class TestUnifiedVertexAIProvider:
 
             # Valid Claude models
             assert provider.validate_model_name("claude-sonnet-4@20250514") is True
-            assert provider.validate_model_name("sonnet-4") is True  # Alias
+            assert provider.validate_model_name("vertex-sonnet-4") is True  # Alias
 
             # Invalid model
             assert provider.validate_model_name("unknown-model") is False
@@ -124,7 +124,7 @@ class TestUnifiedVertexAIProvider:
 
             # Gemini models
             assert provider.supports_thinking_mode("gemini-1.5-pro-002") is False
-            assert provider.supports_thinking_mode("gemini-2.0-flash-exp") is True
+            assert provider.supports_thinking_mode("gemini-2.5-pro") is True
 
             # Claude models don't support thinking mode
             assert provider.supports_thinking_mode("claude-sonnet-4@20250514") is False
@@ -265,13 +265,13 @@ class TestUnifiedVertexAIProvider:
 
             # Test _is_claude_model method
             assert provider._is_claude_model("claude-sonnet-4@20250514") is True
-            assert provider._is_claude_model("sonnet-4") is True  # Alias
+            assert provider._is_claude_model("vertex-sonnet-4") is True  # Alias
             assert provider._is_claude_model("gemini-1.5-pro-002") is False
             assert provider._is_claude_model("vertex-pro") is False  # Gemini alias
 
             # Test _resolve_model_name method
-            assert provider._resolve_model_name("sonnet-4") == "claude-sonnet-4@20250514"
-            assert provider._resolve_model_name("vertex-pro") == "gemini-1.5-pro-002"
+            assert provider._resolve_model_name("vertex-sonnet-4") == "claude-sonnet-4@20250514"
+            assert provider._resolve_model_name("vertex-pro") == "gemini-2.5-pro"
             assert provider._resolve_model_name("unknown-model") == "unknown-model"
 
     @patch("utils.credential_manager.default")

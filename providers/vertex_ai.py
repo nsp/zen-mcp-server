@@ -59,14 +59,14 @@ class VertexAIModelProvider(ModelProvider):
         "asia-southeast1",
     ]
 
-    # Gemini model configurations
+    # Gemini model configurations based on Vertex AI documentation
     GEMINI_MODELS = {
         "gemini-2.5-pro": ModelCapabilities(
             provider=ProviderType.VERTEX_AI,
             model_name="gemini-2.5-pro",
             friendly_name="Gemini 2.5 Pro",
-            context_window=1_048_576,
-            max_output_tokens=8_192,
+            context_window=1_048_576,  # 1M tokens - matches Google AI direct API
+            max_output_tokens=65_536,  # Increased to match Google AI specs
             supports_extended_thinking=True,
             supports_system_prompts=True,
             supports_streaming=True,
@@ -76,15 +76,15 @@ class VertexAIModelProvider(ModelProvider):
             max_image_size_mb=20.0,
             supports_temperature=True,
             temperature_constraint=create_temperature_constraint("range"),
-            description="Latest Gemini Pro model with advanced reasoning and thinking mode (1M context)",
-            aliases=["gemini-pro", "vertex-pro"],
+            description="Most advanced reasoning model with 1M context window and thinking mode",
+            aliases=["vertex-gemini-pro", "vertex-pro"],
         ),
         "gemini-2.5-flash": ModelCapabilities(
             provider=ProviderType.VERTEX_AI,
             model_name="gemini-2.5-flash",
             friendly_name="Gemini 2.5 Flash",
-            context_window=1_048_576,
-            max_output_tokens=8_192,
+            context_window=1_048_576,  # 1M tokens - matches Google AI direct API
+            max_output_tokens=65_536,  # Increased to match Google AI specs
             supports_extended_thinking=True,
             supports_system_prompts=True,
             supports_streaming=True,
@@ -94,15 +94,33 @@ class VertexAIModelProvider(ModelProvider):
             max_image_size_mb=20.0,
             supports_temperature=True,
             temperature_constraint=create_temperature_constraint("range"),
-            description="Latest Gemini Flash model with thinking mode support (1M context)",
-            aliases=["gemini-flash", "vertex-flash"],
+            description="Best price-performance model with 1M context and thinking mode",
+            aliases=["vertex-gemini-flash", "vertex-flash"],
         ),
-        "gemini-2.0-flash-001": ModelCapabilities(
+        "gemini-2.5-flash-lite": ModelCapabilities(
             provider=ProviderType.VERTEX_AI,
-            model_name="gemini-2.0-flash-001",
-            friendly_name="Gemini 2.0 Flash",
-            context_window=1_048_576,
+            model_name="gemini-2.5-flash-lite",
+            friendly_name="Gemini 2.5 Flash-Lite",
+            context_window=1_000_000,  # 1M context per docs
             max_output_tokens=8_192,
+            supports_extended_thinking=False,
+            supports_system_prompts=True,
+            supports_streaming=True,
+            supports_function_calling=True,
+            supports_json_mode=True,
+            supports_images=True,
+            max_image_size_mb=20.0,
+            supports_temperature=True,
+            temperature_constraint=create_temperature_constraint("range"),
+            description="Most cost-effective model for high throughput tasks (1M context)",
+            aliases=["vertex-gemini-flash-lite", "vertex-flash-lite"],
+        ),
+        "gemini-2.0-flash": ModelCapabilities(
+            provider=ProviderType.VERTEX_AI,
+            model_name="gemini-2.0-flash",
+            friendly_name="Gemini 2.0 Flash",
+            context_window=1_048_576,  # 1M tokens - matches Google AI direct API
+            max_output_tokens=65_536,  # Increased to match Google AI specs
             supports_extended_thinking=True,
             supports_system_prompts=True,
             supports_streaming=True,
@@ -112,14 +130,32 @@ class VertexAIModelProvider(ModelProvider):
             max_image_size_mb=20.0,
             supports_temperature=True,
             temperature_constraint=create_temperature_constraint("range"),
-            description="Gemini 2.0 Flash stable model with thinking mode support",
-            aliases=["gemini-2-flash"],
+            description="Newest multimodal model with 1M context",
+            aliases=["vertex-gemini-2-flash", "vertex-2-flash"],
+        ),
+        "gemini-2.0-flash-lite": ModelCapabilities(
+            provider=ProviderType.VERTEX_AI,
+            model_name="gemini-2.0-flash-lite",
+            friendly_name="Gemini 2.0 Flash-Lite",
+            context_window=1_000_000,  # 1M context
+            max_output_tokens=8_192,
+            supports_extended_thinking=False,
+            supports_system_prompts=True,
+            supports_streaming=True,
+            supports_function_calling=True,
+            supports_json_mode=True,
+            supports_images=True,
+            max_image_size_mb=20.0,
+            supports_temperature=True,
+            temperature_constraint=create_temperature_constraint("range"),
+            description="Optimized for cost efficiency and low latency (1M context)",
+            aliases=["vertex-gemini-2-flash-lite", "vertex-2-flash-lite"],
         ),
         "gemini-1.5-pro-002": ModelCapabilities(
             provider=ProviderType.VERTEX_AI,
             model_name="gemini-1.5-pro-002",
             friendly_name="Gemini 1.5 Pro (Legacy)",
-            context_window=2_097_152,
+            context_window=2_097_152,  # 2M tokens for legacy 1.5 Pro
             max_output_tokens=8_192,
             supports_extended_thinking=False,
             supports_system_prompts=True,
@@ -131,7 +167,7 @@ class VertexAIModelProvider(ModelProvider):
             supports_temperature=True,
             temperature_constraint=create_temperature_constraint("range"),
             description="Legacy Gemini 1.5 Pro model (2M context)",
-            aliases=["gemini-1.5-pro"],
+            aliases=["vertex-gemini-1.5-pro", "vertex-1.5-pro"],
         ),
         "gemini-1.5-flash-002": ModelCapabilities(
             provider=ProviderType.VERTEX_AI,
@@ -149,17 +185,17 @@ class VertexAIModelProvider(ModelProvider):
             supports_temperature=True,
             temperature_constraint=create_temperature_constraint("range"),
             description="Legacy Gemini 1.5 Flash model (1M context)",
-            aliases=["gemini-1.5-flash"],
+            aliases=["vertex-gemini-1.5-flash", "vertex-1.5-flash"],
         ),
     }
 
-    # Claude model configurations
+    # Claude model configurations based on Vertex AI partner models documentation
     CLAUDE_MODELS = {
         "claude-sonnet-4@20250514": ModelCapabilities(
             provider=ProviderType.VERTEX_AI,
             model_name="claude-sonnet-4@20250514",
             friendly_name="Claude Sonnet 4 (Vertex AI)",
-            context_window=200_000,
+            context_window=200_000,  # Standard Claude context
             max_output_tokens=8_192,
             supports_extended_thinking=False,
             supports_system_prompts=True,
@@ -170,13 +206,49 @@ class VertexAIModelProvider(ModelProvider):
             max_image_size_mb=20.0,
             supports_temperature=True,
             temperature_constraint=create_temperature_constraint("range"),
-            description="Claude 4 Sonnet on Vertex AI - Balanced performance and capability",
-            aliases=["claude-sonnet-4", "sonnet-4", "claude-vertex-sonnet"],
+            description="Claude 4 Sonnet - Balances performance and speed for coding, AI assistants, research",
+            aliases=["vertex-claude-sonnet-4", "vertex-sonnet-4"],
         ),
         "claude-opus-4@20250514": ModelCapabilities(
             provider=ProviderType.VERTEX_AI,
             model_name="claude-opus-4@20250514",
             friendly_name="Claude Opus 4 (Vertex AI)",
+            context_window=200_000,  # Standard Claude context
+            max_output_tokens=8_192,
+            supports_extended_thinking=False,
+            supports_system_prompts=True,
+            supports_streaming=True,
+            supports_function_calling=True,
+            supports_json_mode=True,
+            supports_images=True,
+            max_image_size_mb=20.0,
+            supports_temperature=True,
+            temperature_constraint=create_temperature_constraint("range"),
+            description="Claude 4 Opus - Most intelligent model for advanced coding, long-horizon tasks, AI agents",
+            aliases=["vertex-claude-opus-4", "vertex-opus-4"],
+        ),
+        "claude-3.7-sonnet": ModelCapabilities(
+            provider=ProviderType.VERTEX_AI,
+            model_name="claude-3.7-sonnet",
+            friendly_name="Claude 3.7 Sonnet (Vertex AI)",
+            context_window=200_000,
+            max_output_tokens=8_192,
+            supports_extended_thinking=True,  # Has extended thinking capability
+            supports_system_prompts=True,
+            supports_streaming=True,
+            supports_function_calling=True,
+            supports_json_mode=True,
+            supports_images=True,
+            max_image_size_mb=20.0,
+            supports_temperature=True,
+            temperature_constraint=create_temperature_constraint("range"),
+            description="Claude 3.7 Sonnet with extended thinking - Optimized for agentic coding, customer-facing agents",
+            aliases=["vertex-claude-37-sonnet", "vertex-claude-3.7-sonnet"],
+        ),
+        "claude-3.5-sonnet-v2": ModelCapabilities(
+            provider=ProviderType.VERTEX_AI,
+            model_name="claude-3.5-sonnet-v2",
+            friendly_name="Claude 3.5 Sonnet v2 (Vertex AI)",
             context_window=200_000,
             max_output_tokens=8_192,
             supports_extended_thinking=False,
@@ -188,8 +260,62 @@ class VertexAIModelProvider(ModelProvider):
             max_image_size_mb=20.0,
             supports_temperature=True,
             temperature_constraint=create_temperature_constraint("range"),
-            description="Claude 4 Opus on Vertex AI - Maximum capability and performance",
-            aliases=["claude-opus-4", "opus-4", "claude-vertex-opus"],
+            description="Claude 3.5 Sonnet v2 - State-of-the-art for software engineering with computer interaction",
+            aliases=["vertex-claude-35-sonnet-v2", "vertex-claude-3.5-sonnet-v2"],
+        ),
+        "claude-3.5-sonnet": ModelCapabilities(
+            provider=ProviderType.VERTEX_AI,
+            model_name="claude-3.5-sonnet",
+            friendly_name="Claude 3.5 Sonnet (Vertex AI)",
+            context_window=200_000,
+            max_output_tokens=8_192,
+            supports_extended_thinking=False,
+            supports_system_prompts=True,
+            supports_streaming=True,
+            supports_function_calling=True,
+            supports_json_mode=True,
+            supports_images=True,
+            max_image_size_mb=20.0,
+            supports_temperature=True,
+            temperature_constraint=create_temperature_constraint("range"),
+            description="Claude 3.5 Sonnet - Outperforms Claude 3 Opus in coding, customer support, data analysis",
+            aliases=["vertex-claude-35-sonnet", "vertex-claude-3.5-sonnet"],
+        ),
+        "claude-3.5-haiku": ModelCapabilities(
+            provider=ProviderType.VERTEX_AI,
+            model_name="claude-3.5-haiku",
+            friendly_name="Claude 3.5 Haiku (Vertex AI)",
+            context_window=200_000,
+            max_output_tokens=8_192,
+            supports_extended_thinking=False,
+            supports_system_prompts=True,
+            supports_streaming=True,
+            supports_function_calling=True,
+            supports_json_mode=True,
+            supports_images=True,
+            max_image_size_mb=20.0,
+            supports_temperature=True,
+            temperature_constraint=create_temperature_constraint("range"),
+            description="Claude 3.5 Haiku - Fastest and most cost-effective for code completions, interactive chatbots",
+            aliases=["vertex-claude-35-haiku", "vertex-claude-3.5-haiku"],
+        ),
+        "claude-3-haiku": ModelCapabilities(
+            provider=ProviderType.VERTEX_AI,
+            model_name="claude-3-haiku",
+            friendly_name="Claude 3 Haiku (Vertex AI)",
+            context_window=200_000,
+            max_output_tokens=8_192,
+            supports_extended_thinking=False,
+            supports_system_prompts=True,
+            supports_streaming=True,
+            supports_function_calling=True,
+            supports_json_mode=True,
+            supports_images=True,
+            max_image_size_mb=20.0,
+            supports_temperature=True,
+            temperature_constraint=create_temperature_constraint("range"),
+            description="Claude 3 Haiku - Fastest vision and text model for live customer interactions, content moderation",
+            aliases=["vertex-claude-3-haiku", "vertex-haiku-3"],
         ),
     }
 
@@ -212,7 +338,7 @@ class VertexAIModelProvider(ModelProvider):
         self._circuit_breaker = create_circuit_breaker(
             failure_threshold=CIRCUIT_BREAKER_FAILURE_THRESHOLD,
             recovery_timeout=CIRCUIT_BREAKER_RECOVERY_TIMEOUT,
-            name="vertex-ai-provider"
+            name="vertex-ai-provider",
         )
 
         # Get configuration from environment
@@ -271,7 +397,9 @@ class VertexAIModelProvider(ModelProvider):
                 credentials=credentials,
             )
             self._initialized = True
-            logger.info(f"Vertex AI initialized for project {self._project_id} in region {self._location} (Claude models in {self._claude_location})")
+            logger.info(
+                f"Vertex AI initialized for project {self._project_id} in region {self._location} (Claude models in {self._claude_location})"
+            )
         except Exception as e:
             error_msg = f"Failed to initialize Vertex AI in region '{self._location}': {str(e)}"
             if self._location not in self.SUPPORTED_REGIONS:
@@ -296,51 +424,42 @@ class VertexAIModelProvider(ModelProvider):
         )
 
     def _discover_models(self):
-        """Discover which models are available in the project."""
+        """Discover which models are available in the project.
+
+        Note: Vertex AI doesn't provide a simple REST API for model discovery.
+        Models are available based on:
+        1. Project configuration and permissions
+        2. Regional availability
+        3. Account-level access (especially for Claude models)
+
+        For now, we assume all configured models are available and rely on
+        runtime errors to indicate unavailability.
+        """
         self._available_models = {}
         discovered_count = 0
 
-        # Test Gemini models availability
+        # Add all Vertex AI Gemini models - generally available in most regions
         for model_name, capabilities in self.GEMINI_MODELS.items():
-            try:
-                if self._test_model_availability(model_name, is_claude=False):
-                    self._available_models[model_name] = capabilities
-                    for alias in capabilities.aliases:
-                        self._available_models[alias] = capabilities
-                    discovered_count += 1
-                    logger.debug(f"Model {model_name} is available")
-                else:
-                    logger.debug(f"Model {model_name} is not available")
-            except Exception as e:
-                logger.debug(f"Error testing model {model_name}: {e}")
-                # On error, assume available for testing purposes
-                self._available_models[model_name] = capabilities
-                for alias in capabilities.aliases:
-                    self._available_models[alias] = capabilities
-                discovered_count += 1
+            self._available_models[model_name] = capabilities
+            for alias in capabilities.aliases:
+                self._available_models[alias] = capabilities
+            discovered_count += 1
+            logger.debug(f"Added Vertex AI Gemini model {model_name} in region {self._location}")
 
-        # Test Claude models availability
+        # Add Vertex AI Claude partner models - availability depends on project access and region
         for model_name, capabilities in self.CLAUDE_MODELS.items():
-            try:
-                if self._test_model_availability(model_name, is_claude=True):
-                    self._available_models[model_name] = capabilities
-                    for alias in capabilities.aliases:
-                        self._available_models[alias] = capabilities
-                    discovered_count += 1
-                    logger.debug(f"Model {model_name} is available")
-                else:
-                    logger.debug(f"Model {model_name} is not available")
-            except Exception as e:
-                logger.debug(f"Error testing model {model_name}: {e}")
-                # On error, assume available for testing purposes
-                self._available_models[model_name] = capabilities
-                for alias in capabilities.aliases:
-                    self._available_models[alias] = capabilities
-                discovered_count += 1
+            self._available_models[model_name] = capabilities
+            for alias in capabilities.aliases:
+                self._available_models[alias] = capabilities
+            discovered_count += 1
+            logger.debug(
+                f"Added Vertex AI Claude model {model_name} in region {self._claude_location} (requires partner model access)"
+            )
 
         logger.info(
-            f"Discovered {discovered_count} available models on Vertex AI "
-            f"({len(self._available_models)} including aliases)"
+            f"Configured {discovered_count} models for Vertex AI "
+            f"({len(self._available_models)} including aliases). "
+            f"Actual availability depends on project permissions and regional availability."
         )
 
     def _test_model_availability(self, model_name: str, is_claude: bool) -> bool:
@@ -433,7 +552,9 @@ class VertexAIModelProvider(ModelProvider):
         # For Gemini models, try to use the API with retry
         self._initialize_vertex_ai()
 
-        @with_retries(max_attempts=DEFAULT_MAX_RETRIES, initial_delay=DEFAULT_INITIAL_DELAY, max_delay=DEFAULT_MAX_DELAY)
+        @with_retries(
+            max_attempts=DEFAULT_MAX_RETRIES, initial_delay=DEFAULT_INITIAL_DELAY, max_delay=DEFAULT_MAX_DELAY
+        )
         def _count_tokens_api():
             model = GenerativeModel(model_name=self._resolve_model_name(model_name))
             response = model.count_tokens(text)
@@ -539,7 +660,9 @@ class VertexAIModelProvider(ModelProvider):
             content = Content(role="user", parts=content_parts)
 
             # Generate with retries and circuit breaker
-            @with_retries(max_attempts=DEFAULT_MAX_RETRIES, initial_delay=DEFAULT_INITIAL_DELAY, max_delay=DEFAULT_MAX_DELAY)
+            @with_retries(
+                max_attempts=DEFAULT_MAX_RETRIES, initial_delay=DEFAULT_INITIAL_DELAY, max_delay=DEFAULT_MAX_DELAY
+            )
             @with_circuit_breaker(self._circuit_breaker)
             def _generate_api():
                 return model.generate_content(
@@ -647,7 +770,9 @@ class VertexAIModelProvider(ModelProvider):
             request_data["system"] = system_prompt
 
         # Define the API call function with circuit breaker and retry
-        @with_retries(max_attempts=DEFAULT_MAX_RETRIES, initial_delay=DEFAULT_INITIAL_DELAY, max_delay=DEFAULT_MAX_DELAY)
+        @with_retries(
+            max_attempts=DEFAULT_MAX_RETRIES, initial_delay=DEFAULT_INITIAL_DELAY, max_delay=DEFAULT_MAX_DELAY
+        )
         @with_circuit_breaker(self._circuit_breaker)
         def _make_claude_request():
             # Get fresh token for each attempt

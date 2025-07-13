@@ -116,11 +116,13 @@ Zen MCP Server supports these Vertex AI models:
 
 | Model ID | Alias | Context Window | Description |
 |----------|-------|----------------|-------------|
-| `gemini-2.5-pro` | `vertex-pro`, `gemini-pro` | 1M tokens | Latest Gemini Pro with thinking mode support |
-| `gemini-2.5-flash` | `vertex-flash`, `gemini-flash` | 1M tokens | Latest Gemini Flash with thinking mode support |
-| `gemini-2.0-flash-001` | `gemini-2-flash` | 1M tokens | Stable Gemini 2.0 Flash with thinking mode |
-| `gemini-1.5-pro-002` | `gemini-1.5-pro` | 2M tokens | Legacy Gemini 1.5 Pro (no thinking mode) |
-| `gemini-1.5-flash-002` | `gemini-1.5-flash` | 1M tokens | Legacy Gemini 1.5 Flash (no thinking mode) |
+| `gemini-2.5-pro` | `vertex-gemini-pro`, `vertex-pro` | 1M tokens | Latest Gemini Pro with thinking mode support |
+| `gemini-2.5-flash` | `vertex-gemini-flash`, `vertex-flash` | 1M tokens | Latest Gemini Flash with thinking mode support |
+| `gemini-2.0-flash` | `vertex-gemini-2-flash`, `vertex-2-flash` | 1M tokens | Newest multimodal model with thinking mode |
+| `gemini-2.0-flash-lite` | `vertex-gemini-2-flash-lite`, `vertex-2-flash-lite` | 1M tokens | Cost-optimized model with low latency |
+| `gemini-2.5-flash-lite` | `vertex-gemini-flash-lite`, `vertex-flash-lite` | 1M tokens | Most cost-effective for high throughput |
+| `gemini-1.5-pro-002` | `vertex-gemini-1.5-pro`, `vertex-1.5-pro` | 2M tokens | Legacy Gemini 1.5 Pro (no thinking mode) |
+| `gemini-1.5-flash-002` | `vertex-gemini-1.5-flash`, `vertex-1.5-flash` | 1M tokens | Legacy Gemini 1.5 Flash (no thinking mode) |
 
 ### Claude Models (If Available in Your Project)
 
@@ -128,8 +130,13 @@ Some GCP projects may have access to Anthropic Claude models through Vertex AI:
 
 | Model ID | Alias | Context Window | Description |
 |----------|-------|----------------|-------------|
-| `claude-sonnet-4@20250514` | `sonnet-4` | 200K tokens | Balanced performance and capability |
-| `claude-opus-4@20250514` | `opus-4` | 200K tokens | Maximum capability and performance |
+| `claude-sonnet-4@20250514` | `vertex-claude-sonnet-4`, `vertex-sonnet-4` | 200K tokens | Balanced performance and capability |
+| `claude-opus-4@20250514` | `vertex-claude-opus-4`, `vertex-opus-4` | 200K tokens | Maximum capability and performance |
+| `claude-3.7-sonnet` | `vertex-claude-37-sonnet`, `vertex-claude-3.7-sonnet` | 200K tokens | Extended thinking for agentic coding |
+| `claude-3.5-sonnet-v2` | `vertex-claude-35-sonnet-v2`, `vertex-claude-3.5-sonnet-v2` | 200K tokens | State-of-the-art software engineering |
+| `claude-3.5-sonnet` | `vertex-claude-35-sonnet`, `vertex-claude-3.5-sonnet` | 200K tokens | Advanced coding and analysis |
+| `claude-3.5-haiku` | `vertex-claude-35-haiku`, `vertex-claude-3.5-haiku` | 200K tokens | Fast and cost-effective |
+| `claude-3-haiku` | `vertex-claude-3-haiku`, `vertex-haiku-3` | 200K tokens | Fastest vision and text model |
 
 **Note**: Claude model availability depends on your GCP project's access permissions and region. Claude models are typically only available in the `us-east5` region, which is why Zen MCP Server uses a separate `VERTEX_AI_CLAUDE_LOCATION` configuration.
 
@@ -312,8 +319,9 @@ batch_prediction_job = aiplatform.BatchPredictionJob.create(
 ```bash
 # Ask Claude to use Vertex AI models
 "Use vertex-pro to analyze this architecture design"
-"Think deeply about this problem using gemini-1.5-pro-002"
+"Think deeply about this problem using vertex-gemini-1.5-pro"
 "Use vertex-flash for a quick code review"
+"Use vertex-claude-sonnet-4 for advanced reasoning"
 ```
 
 ### Auto Mode with Vertex AI

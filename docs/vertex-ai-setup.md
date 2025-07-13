@@ -1,6 +1,20 @@
 # Vertex AI Setup Guide
 
-This guide will help you configure Google Cloud Vertex AI to work with Zen MCP Server. Vertex AI provides enterprise-grade access to Google's Gemini models with additional security, compliance, and regional deployment options.
+This guide will help you configure Google Cloud Vertex AI to work with Zen MCP Server. **Vertex AI is a fully-managed, unified AI development platform for building and using generative AI. Access and utilize Vertex AI Studio, Agent Builder, and 200+ foundation models.**
+
+## Why Vertex AI?
+
+**Enterprise Necessity**: Vertex AI is often the **only option for corporate users** due to security policies. Many enterprises block direct API access to services like Gemini API, OpenAI, etc., but allow access through their approved GCP infrastructure.
+
+**Key Enterprise Benefits:**
+- **Corporate Compliance**: Works within existing GCP security and compliance frameworks
+- **Network Policies**: Operates through corporate-approved GCP endpoints 
+- **Unified Platform**: Access to 200+ foundation models through single interface
+- **Tunable Configurations**: Enterprise-specific model parameters and limits
+- **Regional Control**: Deploy models in specific regions for data sovereignty
+- **VPC Integration**: Private network access for sensitive workloads
+
+**Important**: Model configurations and limits differ between providers. Vertex AI provides enterprise-tuned parameters that may vary from direct API access, offering additional customization for corporate environments.
 
 ## Prerequisites
 
@@ -111,6 +125,8 @@ curl -X POST \
 ## Available Models
 
 Zen MCP Server supports these Vertex AI models:
+
+**Note on Model Configurations**: Model specifications (context windows, output limits, etc.) may differ between providers due to enterprise-specific tuning, regional deployments, and platform-specific optimizations. Vertex AI configurations are optimized for enterprise use cases and may have different limits than direct API access.
 
 ### Gemini Models (Generally Available)
 

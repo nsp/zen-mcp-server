@@ -7,7 +7,20 @@ import pytest
 
 from providers import ModelProviderRegistry
 from providers.base import ProviderType
-from providers.vertex_ai import VertexAIModelProvider
+
+# Skip all tests in this module if vertexai is not available
+try:
+    from providers.vertex_ai import VertexAIModelProvider
+
+    vertex_ai_available = True
+except ImportError:
+    VertexAIModelProvider = None
+    vertex_ai_available = False
+
+pytestmark = pytest.mark.skipif(
+    not vertex_ai_available,
+    reason="vertexai package not available - install with 'pip install google-cloud-aiplatform'",
+)
 
 
 class TestUnifiedVertexAIProvider:

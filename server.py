@@ -390,9 +390,17 @@ def configure_providers():
     from providers.gemini import GeminiModelProvider
     from providers.openai_provider import OpenAIModelProvider
     from providers.openrouter import OpenRouterProvider
-    from providers.vertex_ai import VertexAIModelProvider
     from providers.xai import XAIModelProvider
     from utils.model_restrictions import get_restriction_service
+
+    # Optional import for Vertex AI
+    try:
+        from providers.vertex_ai import VertexAIModelProvider
+
+        _vertex_ai_available = True
+    except ImportError:
+        VertexAIModelProvider = None
+        _vertex_ai_available = False
 
     valid_providers = []
     has_native_apis = False
@@ -484,7 +492,7 @@ def configure_providers():
             ModelProviderRegistry.register_provider(ProviderType.XAI, XAIModelProvider)
         if dial_key and dial_key != "your_dial_api_key_here":
             ModelProviderRegistry.register_provider(ProviderType.DIAL, DIALModelProvider)
-        if vertex_ai_project_id:
+        if vertex_ai_project_id and _vertex_ai_available:
             ModelProviderRegistry.register_provider(ProviderType.VERTEX_AI, VertexAIModelProvider)
 
     # 2. Custom provider second (for local/private models)

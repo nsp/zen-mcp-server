@@ -38,12 +38,14 @@ OPENAI_API_KEY=your_openai_api_key_here
 XAI_API_KEY=your_xai_api_key_here
 # Get from: https://console.x.ai/
 
-# Google Cloud Vertex AI (Enterprise)
+# Google Cloud Vertex AI (Enterprise - Often Required in Corporate Settings)
+# Vertex AI provides enterprise-grade access when direct APIs are blocked
 VERTEX_AI_PROJECT_ID=your-gcp-project-id
 VERTEX_AI_LOCATION=us-central1  # Optional, defaults to us-central1
 # Auth: Uses Application Default Credentials (ADC)
 # Setup: gcloud auth application-default login
 # Or: export GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json
+# Note: Model configurations may differ from direct APIs due to enterprise tuning
 ```
 
 **Option 2: OpenRouter (Access multiple models through one API)**
@@ -82,8 +84,8 @@ DEFAULT_MODEL=auto  # Claude picks best model for each task (recommended)
 - **`o3-mini`**: Balanced speed/quality (200K context)
 - **`o4-mini`**: Latest reasoning model, optimized for shorter contexts
 - **`grok`**: GROK-3 advanced reasoning (131K context)
-- **`vertex-pro`** (Gemini 1.5 Pro via Vertex AI): Enterprise-grade, 2M context
-- **`vertex-flash`** (Gemini 1.5 Flash via Vertex AI): Fast enterprise model, 1M context
+- **`vertex-pro`** (Gemini 2.5 Pro via Vertex AI): Enterprise-grade with corporate compliance
+- **`vertex-flash`** (Gemini 2.5 Flash via Vertex AI): Fast enterprise model with tuned limits
 - **Custom models**: via OpenRouter or local APIs
 
 ### Thinking Mode Configuration

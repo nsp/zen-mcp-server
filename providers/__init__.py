@@ -6,7 +6,15 @@ from .openai_compatible import OpenAICompatibleProvider
 from .openai_provider import OpenAIModelProvider
 from .openrouter import OpenRouterProvider
 from .registry import ModelProviderRegistry
-from .vertex_ai import VertexAIModelProvider
+
+# Optional import for VertexAI (requires additional dependencies)
+try:
+    from .vertex_ai import VertexAIModelProvider
+
+    _vertex_ai_available = True
+except ImportError:
+    VertexAIModelProvider = None
+    _vertex_ai_available = False
 
 __all__ = [
     "ModelProvider",
@@ -17,5 +25,8 @@ __all__ = [
     "OpenAIModelProvider",
     "OpenAICompatibleProvider",
     "OpenRouterProvider",
-    "VertexAIModelProvider",
 ]
+
+# Conditionally add VertexAI if available
+if _vertex_ai_available:
+    __all__.append("VertexAIModelProvider")

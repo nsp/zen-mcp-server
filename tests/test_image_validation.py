@@ -262,7 +262,7 @@ class TestImageValidation:
 class TestProviderIntegration:
     """Test image validation integration with different providers."""
 
-    @patch("providers.gemini.logger")
+    @patch("utils.gemini_errors.logger")
     def test_gemini_provider_uses_validation(self, mock_logger: Mock) -> None:
         """Test that Gemini provider uses the base validation."""
         from providers.gemini import GeminiModelProvider

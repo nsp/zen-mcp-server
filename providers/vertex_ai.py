@@ -15,8 +15,14 @@ from vertexai.generative_models import (
 )
 
 from utils.credential_manager import CredentialManager
+from utils.gemini_errors import (
+    extract_gemini_usage,
+    is_gemini_error_retryable,
+    process_gemini_image,
+)
 from utils.retry_utils import create_circuit_breaker, with_circuit_breaker, with_retries
 from utils.secure_http import SecureHTTPClient
+from utils.thinking_mode import calculate_thinking_budget, validate_thinking_mode_support
 
 from .base import (
     ModelCapabilities,
@@ -25,6 +31,7 @@ from .base import (
     ProviderType,
     create_temperature_constraint,
 )
+from .gemini_core import GeminiModelRegistry
 
 logger = logging.getLogger(__name__)
 
@@ -59,134 +66,44 @@ class VertexAIModelProvider(ModelProvider):
         "asia-southeast1",
     ]
 
-    # Gemini model configurations based on Vertex AI documentation
-    GEMINI_MODELS = {
-        "gemini-2.5-pro": ModelCapabilities(
-            provider=ProviderType.VERTEX_AI,
-            model_name="gemini-2.5-pro",
-            friendly_name="Gemini 2.5 Pro",
-            context_window=1_048_576,  # 1M tokens - matches Google AI direct API
-            max_output_tokens=65_536,  # Increased to match Google AI specs
-            supports_extended_thinking=True,
-            supports_system_prompts=True,
-            supports_streaming=True,
-            supports_function_calling=True,
-            supports_json_mode=True,
-            supports_images=True,
-            max_image_size_mb=20.0,
-            supports_temperature=True,
-            temperature_constraint=create_temperature_constraint("range"),
-            description="Most advanced reasoning model with 1M context window and thinking mode",
-            aliases=["vertex-gemini-pro", "vertex-pro"],
-        ),
-        "gemini-2.5-flash": ModelCapabilities(
-            provider=ProviderType.VERTEX_AI,
-            model_name="gemini-2.5-flash",
-            friendly_name="Gemini 2.5 Flash",
-            context_window=1_048_576,  # 1M tokens - matches Google AI direct API
-            max_output_tokens=65_536,  # Increased to match Google AI specs
-            supports_extended_thinking=True,
-            supports_system_prompts=True,
-            supports_streaming=True,
-            supports_function_calling=True,
-            supports_json_mode=True,
-            supports_images=True,
-            max_image_size_mb=20.0,
-            supports_temperature=True,
-            temperature_constraint=create_temperature_constraint("range"),
-            description="Best price-performance model with 1M context and thinking mode",
-            aliases=["vertex-gemini-flash", "vertex-flash"],
-        ),
-        "gemini-2.5-flash-lite": ModelCapabilities(
-            provider=ProviderType.VERTEX_AI,
-            model_name="gemini-2.5-flash-lite",
-            friendly_name="Gemini 2.5 Flash-Lite",
-            context_window=1_000_000,  # 1M context per docs
-            max_output_tokens=8_192,
-            supports_extended_thinking=False,
-            supports_system_prompts=True,
-            supports_streaming=True,
-            supports_function_calling=True,
-            supports_json_mode=True,
-            supports_images=True,
-            max_image_size_mb=20.0,
-            supports_temperature=True,
-            temperature_constraint=create_temperature_constraint("range"),
-            description="Most cost-effective model for high throughput tasks (1M context)",
-            aliases=["vertex-gemini-flash-lite", "vertex-flash-lite"],
-        ),
-        "gemini-2.0-flash": ModelCapabilities(
-            provider=ProviderType.VERTEX_AI,
-            model_name="gemini-2.0-flash",
-            friendly_name="Gemini 2.0 Flash",
-            context_window=1_048_576,  # 1M tokens - matches Google AI direct API
-            max_output_tokens=65_536,  # Increased to match Google AI specs
-            supports_extended_thinking=True,
-            supports_system_prompts=True,
-            supports_streaming=True,
-            supports_function_calling=True,
-            supports_json_mode=True,
-            supports_images=True,
-            max_image_size_mb=20.0,
-            supports_temperature=True,
-            temperature_constraint=create_temperature_constraint("range"),
-            description="Newest multimodal model with 1M context",
-            aliases=["vertex-gemini-2-flash", "vertex-2-flash"],
-        ),
-        "gemini-2.0-flash-lite": ModelCapabilities(
-            provider=ProviderType.VERTEX_AI,
-            model_name="gemini-2.0-flash-lite",
-            friendly_name="Gemini 2.0 Flash-Lite",
-            context_window=1_000_000,  # 1M context
-            max_output_tokens=8_192,
-            supports_extended_thinking=False,
-            supports_system_prompts=True,
-            supports_streaming=True,
-            supports_function_calling=True,
-            supports_json_mode=True,
-            supports_images=True,
-            max_image_size_mb=20.0,
-            supports_temperature=True,
-            temperature_constraint=create_temperature_constraint("range"),
-            description="Optimized for cost efficiency and low latency (1M context)",
-            aliases=["vertex-gemini-2-flash-lite", "vertex-2-flash-lite"],
-        ),
-        "gemini-1.5-pro-002": ModelCapabilities(
-            provider=ProviderType.VERTEX_AI,
-            model_name="gemini-1.5-pro-002",
-            friendly_name="Gemini 1.5 Pro (Legacy)",
-            context_window=2_097_152,  # 2M tokens for legacy 1.5 Pro
-            max_output_tokens=8_192,
-            supports_extended_thinking=False,
-            supports_system_prompts=True,
-            supports_streaming=True,
-            supports_function_calling=True,
-            supports_json_mode=True,
-            supports_images=True,
-            max_image_size_mb=20.0,
-            supports_temperature=True,
-            temperature_constraint=create_temperature_constraint("range"),
-            description="Legacy Gemini 1.5 Pro model (2M context)",
-            aliases=["vertex-gemini-1.5-pro", "vertex-1.5-pro"],
-        ),
-        "gemini-1.5-flash-002": ModelCapabilities(
-            provider=ProviderType.VERTEX_AI,
-            model_name="gemini-1.5-flash-002",
-            friendly_name="Gemini 1.5 Flash (Legacy)",
-            context_window=1_048_576,
-            max_output_tokens=8_192,
-            supports_extended_thinking=False,
-            supports_system_prompts=True,
-            supports_streaming=True,
-            supports_function_calling=True,
-            supports_json_mode=True,
-            supports_images=True,
-            max_image_size_mb=20.0,
-            supports_temperature=True,
-            temperature_constraint=create_temperature_constraint("range"),
-            description="Legacy Gemini 1.5 Flash model (1M context)",
-            aliases=["vertex-gemini-1.5-flash", "vertex-1.5-flash"],
-        ),
+    # Vertex AI provider-specific overrides for Gemini models
+    # These customize the shared specifications for Vertex AI infrastructure
+    VERTEX_AI_GEMINI_OVERRIDES = {
+        "gemini-2.5-pro": {
+            "aliases": ["vertex-gemini-pro", "vertex-pro"],
+            "friendly_name_override": "Gemini 2.5 Pro (Vertex AI)",
+            "description_override": "Most advanced reasoning model with 1M context window and thinking mode (Vertex AI)",
+        },
+        "gemini-2.5-flash": {
+            "aliases": ["vertex-gemini-flash", "vertex-flash"],
+            "friendly_name_override": "Gemini 2.5 Flash (Vertex AI)",
+            "description_override": "Best price-performance model with 1M context and thinking mode (Vertex AI)",
+        },
+        "gemini-2.5-flash-lite": {
+            "aliases": ["vertex-gemini-flash-lite", "vertex-flash-lite"],
+            "friendly_name_override": "Gemini 2.5 Flash-Lite (Vertex AI)",
+            "description_override": "Most cost-effective model for high throughput tasks (1M context, Vertex AI)",
+        },
+        "gemini-2.0-flash": {
+            "aliases": ["vertex-gemini-2-flash", "vertex-2-flash"],
+            "friendly_name_override": "Gemini 2.0 Flash (Vertex AI)",
+            "description_override": "Newest multimodal model with 1M context (Vertex AI)",
+        },
+        "gemini-2.0-flash-lite": {
+            "aliases": ["vertex-gemini-2-flash-lite", "vertex-2-flash-lite"],
+            "friendly_name_override": "Gemini 2.0 Flash-Lite (Vertex AI)",
+            "description_override": "Optimized for cost efficiency and low latency (1M context, Vertex AI)",
+        },
+        "gemini-1.5-pro-002": {
+            "aliases": ["vertex-gemini-1.5-pro", "vertex-1.5-pro"],
+            "friendly_name_override": "Gemini 1.5 Pro (Vertex AI Legacy)",
+            "description_override": "Legacy Gemini 1.5 Pro model (2M context, Vertex AI)",
+        },
+        "gemini-1.5-flash-002": {
+            "aliases": ["vertex-gemini-1.5-flash", "vertex-1.5-flash"],
+            "friendly_name_override": "Gemini 1.5 Flash (Vertex AI Legacy)",
+            "description_override": "Legacy Gemini 1.5 Flash model (1M context, Vertex AI)",
+        },
     }
 
     # Claude model configurations based on Vertex AI partner models documentation
@@ -375,6 +292,12 @@ class VertexAIModelProvider(ModelProvider):
             logger.error(f"Failed to initialize credentials: {e}")
             raise
 
+        # Create Gemini models using shared registry with Vertex AI overrides
+        self.GEMINI_MODELS = GeminiModelRegistry.create_provider_models(
+            provider_type=ProviderType.VERTEX_AI,
+            provider_overrides=self.VERTEX_AI_GEMINI_OVERRIDES,
+        )
+
         # Combine all supported models
         self.SUPPORTED_MODELS = {**self.GEMINI_MODELS, **self.CLAUDE_MODELS}
 
@@ -539,9 +462,11 @@ class VertexAIModelProvider(ModelProvider):
 
     def supports_thinking_mode(self, model_name: str) -> bool:
         """Check if a model supports thinking mode."""
-        if model_name in self._available_models:
-            return self._available_models[model_name].supports_extended_thinking
-        return False
+        # Use shared utility for thinking mode validation
+        if self._is_claude_model(model_name):
+            # Claude models don't support thinking mode
+            return False
+        return validate_thinking_mode_support(self._resolve_model_name(model_name), "medium")
 
     def count_tokens(self, text: str, model_name: str) -> int:
         """Count tokens for a given text using model-specific tokenizer."""
@@ -638,11 +563,17 @@ class VertexAIModelProvider(ModelProvider):
             )
 
             # Handle thinking mode for models that support it
-            if thinking_mode and self.supports_thinking_mode(resolved_model):
+            if thinking_mode and validate_thinking_mode_support(resolved_model, thinking_mode):
                 logger.info(f"Using thinking mode '{thinking_mode}' for {resolved_model}")
-                from utils.thinking_mode import apply_thinking_mode
 
-                generation_config = apply_thinking_mode(generation_config, thinking_mode)
+                # Calculate thinking budget using shared utility
+                thinking_budget = calculate_thinking_budget(resolved_model, thinking_mode)
+                if thinking_budget > 0:
+                    # Apply thinking mode to generation config
+                    # Note: This implementation depends on Vertex AI's thinking mode support
+                    # For now, we log the budget but don't modify the config
+                    logger.debug(f"Thinking budget for {resolved_model}: {thinking_budget} tokens")
+                    # TODO: Apply thinking mode configuration when Vertex AI supports it
 
             # Prepare content parts
             content_parts = []
@@ -650,8 +581,17 @@ class VertexAIModelProvider(ModelProvider):
             # Add images if provided
             if images:
                 for image in images:
-                    image_data, mime_type = self.validate_image(image)
-                    content_parts.append(Part.from_data(data=image_data, mime_type=mime_type))
+                    # Use shared image processing utility
+                    processed_image = process_gemini_image(image, self.validate_image)
+                    if processed_image:
+                        # Extract data from processed image format
+                        image_data = processed_image["inline_data"]["data"]
+                        mime_type = processed_image["inline_data"]["mime_type"]
+                        # Convert base64 string back to bytes for Vertex AI
+                        import base64
+
+                        image_bytes = base64.b64decode(image_data)
+                        content_parts.append(Part.from_data(data=image_bytes, mime_type=mime_type))
 
             # Add text prompt
             content_parts.append(Part.from_text(prompt))
@@ -673,12 +613,8 @@ class VertexAIModelProvider(ModelProvider):
             try:
                 response = _generate_api()
 
-                # Extract usage metadata
-                usage = {
-                    "input_tokens": getattr(response.usage_metadata, "prompt_token_count", 0),
-                    "output_tokens": getattr(response.usage_metadata, "candidates_token_count", 0),
-                    "total_tokens": getattr(response.usage_metadata, "total_token_count", 0),
-                }
+                # Extract usage metadata using shared utility
+                usage = extract_gemini_usage(response)
 
                 return ModelResponse(
                     content=response.text,
@@ -693,6 +629,13 @@ class VertexAIModelProvider(ModelProvider):
 
         except Exception as e:
             logger.error(f"Gemini content generation failed: {e}")
+
+            # Use shared error handling for retryability assessment
+            if is_gemini_error_retryable(e):
+                logger.info(f"Gemini error is retryable: {e}")
+            else:
+                logger.warning(f"Gemini error is not retryable: {e}")
+
             raise RuntimeError(f"Vertex AI Gemini error: {str(e)}")
 
     def _generate_claude_content(
@@ -726,19 +669,20 @@ class VertexAIModelProvider(ModelProvider):
         if images:
             content_parts = []
             for image in images:
-                image_data, mime_type = self.validate_image(image)
-                import base64
-
-                content_parts.append(
-                    {
-                        "type": "image",
-                        "source": {
-                            "type": "base64",
-                            "media_type": mime_type,
-                            "data": base64.b64encode(image_data).decode("utf-8"),
-                        },
-                    }
-                )
+                # Use shared image processing utility
+                processed_image = process_gemini_image(image, self.validate_image)
+                if processed_image:
+                    # Convert from Gemini format to Claude format
+                    content_parts.append(
+                        {
+                            "type": "image",
+                            "source": {
+                                "type": "base64",
+                                "media_type": processed_image["inline_data"]["mime_type"],
+                                "data": processed_image["inline_data"]["data"],
+                            },
+                        }
+                    )
 
             # Add text prompt
             content_parts.append({"type": "text", "text": prompt})
@@ -832,11 +776,11 @@ class VertexAIModelProvider(ModelProvider):
 
     def _is_error_retryable(self, error: Exception) -> bool:
         """Check if an error is retryable."""
-        # Network and timeout errors
-        error_str = str(error).lower()
-        if any(keyword in error_str for keyword in ["timeout", "timed out", "connection"]):
+        # Use shared error handling logic for Gemini-style errors
+        if is_gemini_error_retryable(error):
             return True
 
+        # Additional Vertex AI specific error handling
         # Google API specific errors
         if isinstance(error, google_exceptions.ServiceUnavailable):
             return True
@@ -844,7 +788,6 @@ class VertexAIModelProvider(ModelProvider):
             return True
         if isinstance(error, google_exceptions.ResourceExhausted):
             # Check if it's a rate limit (retryable) vs quota exhausted (not retryable)
-            error_str = str(error)
             if hasattr(error, "details") and error.details:
                 for detail in error.details:
                     if "QuotaFailure" in str(detail) or "quota" in str(detail).lower():

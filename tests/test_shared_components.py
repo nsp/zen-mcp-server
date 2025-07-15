@@ -35,6 +35,8 @@ class TestGeminiModelRegistry:
             ("gemini-2.5-flash", 1_048_576, True, True),
             ("gemini-2.5-pro", 1_048_576, True, True),
             ("gemini-1.5-pro-002", 2_097_152, True, False),
+            ("gemini-2.0-flash", 1_048_576, True, True),
+            ("gemini-1.5-flash-002", 1_048_576, True, False),
         ],
     )
     def test_get_spec_valid_models(self, model_id, expected_context, supports_images, supports_thinking):
@@ -161,32 +163,23 @@ class TestThinkingModeUtils:
         assert THINKING_BUDGETS["high"] < THINKING_BUDGETS["max"]
 
     @pytest.mark.parametrize(
-        "model,thinking_mode",
+        "model,thinking_mode,expected_support",
         [
-            ("gemini-2.5-flash", "medium"),
-            ("gemini-2.5-flash", "high"),
-            ("gemini-2.5-flash", "max"),
-            ("gemini-2.5-pro", "medium"),
-            ("gemini-2.5-pro", "high"),
-            ("gemini-2.0-flash", "medium"),
+            ("gemini-2.5-flash", "medium", True),
+            ("gemini-2.5-flash", "high", True),
+            ("gemini-2.5-flash", "max", True),
+            ("gemini-2.5-pro", "medium", True),
+            ("gemini-2.5-pro", "high", True),
+            ("gemini-2.0-flash", "medium", True),
+            ("gemini-1.5-pro-002", "medium", False),
+            ("gemini-1.5-pro-002", "high", False),
+            ("gemini-1.5-flash-002", "medium", False),
+            ("gemini-1.5-flash-002", "high", False),
         ],
     )
-    def test_validate_thinking_mode_support_valid_models(self, model, thinking_mode):
-        """Test thinking mode validation for models that support it."""
-        assert validate_thinking_mode_support(model, thinking_mode) is True
-
-    @pytest.mark.parametrize(
-        "model,thinking_mode",
-        [
-            ("gemini-1.5-pro-002", "medium"),
-            ("gemini-1.5-pro-002", "high"),
-            ("gemini-1.5-flash-002", "medium"),
-            ("gemini-1.5-flash-002", "high"),
-        ],
-    )
-    def test_validate_thinking_mode_support_invalid_models(self, model, thinking_mode):
-        """Test thinking mode validation for models that don't support it."""
-        assert validate_thinking_mode_support(model, thinking_mode) is False
+    def test_validate_thinking_mode_support(self, model, thinking_mode, expected_support):
+        """Test thinking mode validation for all model types."""
+        assert validate_thinking_mode_support(model, thinking_mode) == expected_support
 
     def test_validate_thinking_mode_support_unknown_model(self):
         """Test thinking mode validation for unknown models."""
@@ -232,60 +225,32 @@ class TestGeminiErrorHandling:
     """Test the shared Gemini error handling utilities."""
 
     @pytest.mark.parametrize(
-        "error_message",
+        "error_message,expected_retryable",
         [
-            "429 Too Many Requests",
-            "503 Service Unavailable",
-            "timeout occurred",
+            # Retryable rate limits and network errors
+            ("429 Too Many Requests", True),
+            ("503 Service Unavailable", True),
+            ("timeout occurred", True),
+            ("Connection timeout", True),
+            ("Network unreachable", True),
+            ("502 Bad Gateway", True),
+            ("SSL handshake failed", True),
+            # Non-retryable limit errors
+            ("429 quota exceeded for billing account", False),
+            ("resource exhausted: context length exceeded", False),
+            ("token limit exceeded for request", False),
+            ("request too large for model", False),
+            # Permanent errors
+            ("401 Unauthorized", False),
+            ("403 Forbidden", False),
+            ("400 Bad Request", False),
+            ("404 Not Found", False),
         ],
     )
-    def test_is_gemini_error_retryable_rate_limits(self, error_message):
-        """Test retry logic for rate limiting errors."""
+    def test_is_gemini_error_retryable(self, error_message, expected_retryable):
+        """Test retry logic for various error types."""
         error = Exception(error_message)
-        assert is_gemini_error_retryable(error) is True
-
-    @pytest.mark.parametrize(
-        "error_message",
-        [
-            "429 quota exceeded for billing account",
-            "resource exhausted: context length exceeded",
-            "token limit exceeded for request",
-            "request too large for model",
-        ],
-    )
-    def test_is_gemini_error_retryable_non_retryable_limits(self, error_message):
-        """Test retry logic for non-retryable limit errors."""
-        error = Exception(error_message)
-        assert is_gemini_error_retryable(error) is False
-
-    @pytest.mark.parametrize(
-        "error_message",
-        [
-            "Connection timeout",
-            "Network unreachable",
-            "503 Service Unavailable",
-            "502 Bad Gateway",
-            "SSL handshake failed",
-        ],
-    )
-    def test_is_gemini_error_retryable_network_errors(self, error_message):
-        """Test retry logic for network-related errors."""
-        error = Exception(error_message)
-        assert is_gemini_error_retryable(error) is True
-
-    @pytest.mark.parametrize(
-        "error_message",
-        [
-            "401 Unauthorized",
-            "403 Forbidden",
-            "400 Bad Request",
-            "404 Not Found",
-        ],
-    )
-    def test_is_gemini_error_retryable_permanent_errors(self, error_message):
-        """Test retry logic for permanent errors."""
-        error = Exception(error_message)
-        assert is_gemini_error_retryable(error) is False
+        assert is_gemini_error_retryable(error) == expected_retryable
 
     def test_is_gemini_error_retryable_structured_errors(self):
         """Test retry logic for structured errors with details."""

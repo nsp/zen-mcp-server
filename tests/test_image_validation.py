@@ -209,6 +209,55 @@ class ImageValidationAssertions:
         assert expected_error in str(excinfo.value)
 
 
+# Test data matrices for parameterized testing
+DATA_URL_ERROR_MATRIX = [
+    ("invalid_format", "invalid_format"),  # Missing base64 part
+    ("missing_data", "invalid_format"),    # Missing data
+    ("unsupported_type", "unsupported_type"),  # Not an image
+    ("unsupported_bmp", "unsupported_bmp"),   # BMP format
+    ("invalid_base64", "invalid_base64"),     # Invalid base64
+]
+
+FILE_PATH_ERROR_MATRIX = [
+    ("/path/to/nonexistent/image.png", "file_not_found"),
+    (".bmp", "unsupported_extension"),  # Will be created with temp_file_factory
+]
+
+SUPPORTED_FORMATS_MATRIX = [
+    (".png", "image/png"),
+    (".jpg", "image/jpeg"),
+    (".jpeg", "image/jpeg"),
+    (".gif", "image/gif"),
+    (".webp", "image/webp"),
+]
+
+SIZE_LIMIT_MATRIX = [
+    (1, 2, False),  # 2MB file with 1MB limit should fail
+    (3, 2, True),   # 2MB file with 3MB limit should succeed
+    (None, 1, True),  # 1MB file with default limit should succeed
+]
+
+PROVIDER_INTEGRATION_MATRIX = [
+    ("providers.gemini", "GeminiModelProvider", "utils.gemini_errors.logger"),
+    ("providers.xai", "XAIModelProvider", "providers.openai_compatible.logging"),
+]
+
+
+@pytest.fixture
+def image_provider():
+    """Fixture for creating test image provider instances."""
+    return MinimalTestProvider(api_key="test-key")
+
+
+@pytest.fixture
+def validation_test_data():
+    """Fixture for all validation test data."""
+    return {
+        "urls": create_test_data_urls(),
+        "errors": create_test_error_patterns(),
+    }
+
+
 class TestImageValidation:
     """Test suite for image validation functionality."""
 

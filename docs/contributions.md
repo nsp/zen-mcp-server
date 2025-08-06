@@ -32,7 +32,7 @@ Before submitting any PR, run our automated quality check script:
 
 This script automatically runs:
 - Ruff linting with auto-fix
-- Black code formatting 
+- Black code formatting
 - Import sorting with isort
 - Complete unit test suite (361 tests)
 - Verification that all checks pass 100%
@@ -56,7 +56,7 @@ python -m pytest -xvs
 python communication_simulator_test.py
 ```
 
-**Important**: 
+**Important**:
 - **Every single test must pass** - we have zero tolerance for failing tests in CI
 - All linting must pass cleanly (ruff, black, isort)
 - Import sorting must be correct
@@ -69,12 +69,12 @@ python communication_simulator_test.py
 1. **New features MUST include tests**:
    - Add unit tests in `tests/` for new functions or classes
    - Test both success and error cases
-   
+
 2. **Tool changes require simulator tests**:
    - Add simulator tests in `simulator_tests/` for new or modified tools
    - Use realistic prompts that demonstrate the feature
    - Validate output through server logs
-   
+
 3. **Bug fixes require regression tests**:
    - Add a test that would have caught the bug
    - Ensure the bug cannot reoccur
@@ -136,14 +136,14 @@ def process_model_response(
     max_tokens: Optional[int] = None
 ) -> ProcessedResult:
     """Process and validate model response.
-    
+
     Args:
         response: Raw response from the model provider
         max_tokens: Optional token limit for truncation
-        
+
     Returns:
         ProcessedResult with validated and formatted content
-        
+
     Raises:
         ValueError: If response is invalid or exceeds limits
     """

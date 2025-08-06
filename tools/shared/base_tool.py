@@ -22,11 +22,7 @@ if TYPE_CHECKING:
 from config import MCP_PROMPT_SIZE_LIMIT
 from providers import ModelProvider, ModelProviderRegistry
 from utils import check_token_limit
-from utils.conversation_memory import (
-    ConversationTurn,
-    get_conversation_file_list,
-    get_thread,
-)
+from utils.conversation_memory import ConversationTurn, get_conversation_file_list, get_thread
 from utils.file_utils import read_file_content, read_files
 
 # Import models from tools.models for compatibility
@@ -779,7 +775,6 @@ class BaseTool(ABC):
         updated_files = []
 
         for file_path in files:
-
             # Check if the filename is exactly "prompt.txt"
             # This ensures we don't match files like "myprompt.txt" or "prompt.txt.bak"
             if os.path.basename(file_path) == "prompt.txt":

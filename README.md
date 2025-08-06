@@ -415,7 +415,7 @@ Wraps your input with instructions for critical thinking and honest analysis.
 challenge isn't adding this function to the base class a bad idea?
 ```
 
-Normally, your favorite coding agent will enthusiastically reply with **“You’re absolutely right!”**—then proceed 
+Normally, your favorite coding agent will enthusiastically reply with **“You’re absolutely right!”**—then proceed
 to completely reverse the _correct_ strategy, without ever explaining why you're wrong.
 
 <details>
@@ -527,11 +527,11 @@ Nice! This is just one instance - take a look at [another example here](docs/too
 **[📖 Read More](docs/tools/precommit.md)** - Multi-repository validation and change analysis
 
 ### 8. `debug` - Expert Debugging Assistant
-Systematic investigation-guided debugging that walks Claude through step-by-step root cause analysis. This workflow 
-tool enforces a structured investigation process where Claude performs methodical code examination, evidence collection, 
-and hypothesis formation across multiple steps before receiving expert analysis from the selected AI model. When Claude's 
-confidence reaches **100% certainty** during the investigative workflow, expert analysis via another model is skipped to 
-save on tokens and cost, and Claude proceeds directly to fixing the issue. 
+Systematic investigation-guided debugging that walks Claude through step-by-step root cause analysis. This workflow
+tool enforces a structured investigation process where Claude performs methodical code examination, evidence collection,
+and hypothesis formation across multiple steps before receiving expert analysis from the selected AI model. When Claude's
+confidence reaches **100% certainty** during the investigative workflow, expert analysis via another model is skipped to
+save on tokens and cost, and Claude proceeds directly to fixing the issue.
 
 ```
 See logs under /Users/me/project/diagnostics.log and related code under the sync folder.

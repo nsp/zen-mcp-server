@@ -5,13 +5,7 @@ from typing import Any, Callable, Optional
 
 import pybreaker
 from google.api_core import exceptions as google_exceptions
-from tenacity import (
-    before_sleep_log,
-    retry,
-    retry_if_exception,
-    stop_after_attempt,
-    wait_exponential,
-)
+from tenacity import before_sleep_log, retry, retry_if_exception, stop_after_attempt, wait_exponential
 
 logger = logging.getLogger(__name__)
 

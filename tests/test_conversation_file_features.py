@@ -98,11 +98,11 @@ class TestConversationFileList:
 class TestFileInclusionPlanning:
     """Test token-aware file inclusion planning for conversation history"""
 
-    def test_plan_file_inclusion_within_budget(self, project_path):
+    def test_plan_file_inclusion_within_budget(self, tmp_path):
         """Test file inclusion when all files fit within token budget"""
         # Create small test files
-        small_file1 = os.path.join(project_path, "small1.py")
-        small_file2 = os.path.join(project_path, "small2.py")
+        small_file1 = os.path.join(tmp_path, "small1.py")
+        small_file2 = os.path.join(tmp_path, "small2.py")
 
         with open(small_file1, "w") as f:
             f.write("# Small file 1\nprint('hello')\n")  # ~30 chars
@@ -118,11 +118,11 @@ class TestFileInclusionPlanning:
         assert skipped == []
         assert total_tokens > 0  # Should have estimated some tokens
 
-    def test_plan_file_inclusion_exceeds_budget(self, project_path):
+    def test_plan_file_inclusion_exceeds_budget(self, tmp_path):
         """Test file inclusion when files exceed token budget"""
         # Create files with different sizes
-        small_file = os.path.join(project_path, "small.py")
-        large_file = os.path.join(project_path, "large.py")
+        small_file = os.path.join(tmp_path, "small.py")
+        large_file = os.path.join(tmp_path, "large.py")
 
         with open(small_file, "w") as f:
             f.write("# Small file\nprint('hello')\n")  # ~25 chars
@@ -161,14 +161,14 @@ class TestConversationHistoryBuilding:
     """Test conversation history building with file content embedding"""
 
     @patch.dict(os.environ, {"GEMINI_API_KEY": "test-key", "OPENAI_API_KEY": ""}, clear=False)
-    def test_build_conversation_history_with_file_content(self, project_path):
+    def test_build_conversation_history_with_file_content(self, tmp_path):
         """Test that conversation history includes embedded file content"""
         from providers.registry import ModelProviderRegistry
 
         ModelProviderRegistry.clear_cache()
 
         # Create test file with known content
-        test_file = os.path.join(project_path, "test.py")
+        test_file = os.path.join(tmp_path, "test.py")
         test_content = "# Test file\ndef hello():\n    print('Hello, world!')\n"
         with open(test_file, "w") as f:
             f.write(test_content)
@@ -210,13 +210,13 @@ class TestConversationHistoryBuilding:
         assert f"Files used in this turn: {test_file}" in history
 
     @patch.dict(os.environ, {"GEMINI_API_KEY": "test-key", "OPENAI_API_KEY": ""}, clear=False)
-    def test_build_conversation_history_file_deduplication(self, project_path):
+    def test_build_conversation_history_file_deduplication(self, tmp_path):
         """Test that files are embedded only once even if referenced multiple times"""
         from providers.registry import ModelProviderRegistry
 
         ModelProviderRegistry.clear_cache()
 
-        test_file = os.path.join(project_path, "shared.py")
+        test_file = os.path.join(tmp_path, "shared.py")
         with open(test_file, "w") as f:
             f.write("# Shared file\nshared_var = 42\n")
 
@@ -278,14 +278,14 @@ class TestCrossToolFileContext:
     """Test cross-tool file context preservation in conversations"""
 
     @patch.dict(os.environ, {"GEMINI_API_KEY": "test-key", "OPENAI_API_KEY": ""}, clear=False)
-    def test_cross_tool_file_context_preservation(self, project_path):
+    def test_cross_tool_file_context_preservation(self, tmp_path):
         """Test that file context is preserved across different tools"""
         from providers.registry import ModelProviderRegistry
 
         ModelProviderRegistry.clear_cache()
 
-        src_file = os.path.join(project_path, "src.py")
-        test_file = os.path.join(project_path, "test.py")
+        src_file = os.path.join(tmp_path, "src.py")
+        test_file = os.path.join(tmp_path, "test.py")
 
         with open(src_file, "w") as f:
             f.write("def main():\n    return 'hello'\n")
@@ -349,7 +349,7 @@ class TestLargeConversations:
     """Test behavior with large conversations, many files, and many turns"""
 
     @patch.dict(os.environ, {"GEMINI_API_KEY": "test-key", "OPENAI_API_KEY": ""}, clear=False)
-    def test_large_conversation_with_many_files(self, project_path):
+    def test_large_conversation_with_many_files(self, tmp_path):
         """Test conversation with many files across multiple turns"""
         from providers.registry import ModelProviderRegistry
 
@@ -358,7 +358,7 @@ class TestLargeConversations:
         # Create 20 test files
         test_files = []
         for i in range(20):
-            test_file = os.path.join(project_path, f"file{i:02d}.py")
+            test_file = os.path.join(tmp_path, f"file{i:02d}.py")
             with open(test_file, "w") as f:
                 f.write(f"# File {i}\nclass Module{i}:\n    def method(self):\n        return {i}\n")
             test_files.append(test_file)
@@ -431,13 +431,13 @@ class TestSmallAndNewConversations:
         assert tokens == 0
 
     @patch.dict(os.environ, {"GEMINI_API_KEY": "test-key", "OPENAI_API_KEY": ""}, clear=False)
-    def test_single_turn_conversation(self, project_path):
+    def test_single_turn_conversation(self, tmp_path):
         """Test conversation with just one turn"""
         from providers.registry import ModelProviderRegistry
 
         ModelProviderRegistry.clear_cache()
 
-        test_file = os.path.join(project_path, "single.py")
+        test_file = os.path.join(tmp_path, "single.py")
         with open(test_file, "w") as f:
             f.write("# Single file\ndef hello():\n    return 'world'\n")
 
@@ -500,17 +500,17 @@ class TestFailureScenarios:
         assert "/also/missing.py" in files
 
     @patch.dict(os.environ, {"GEMINI_API_KEY": "test-key", "OPENAI_API_KEY": ""}, clear=False)
-    def test_conversation_with_unreadable_files(self, project_path):
+    def test_conversation_with_unreadable_files(self, tmp_path):
         """Test conversation history building with unreadable files"""
         from providers.registry import ModelProviderRegistry
 
         ModelProviderRegistry.clear_cache()
 
         # Create a file that will be treated as missing
-        missing_file = os.path.join(project_path, "nonexistent.py")
+        missing_file = os.path.join(tmp_path, "nonexistent.py")
 
         # Create a readable file for comparison
-        test_file = os.path.join(project_path, "readable.py")
+        test_file = os.path.join(tmp_path, "readable.py")
         with open(test_file, "w") as f:
             f.write("# Test file\ndef test(): pass\n")
 

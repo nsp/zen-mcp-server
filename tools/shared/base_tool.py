@@ -1195,34 +1195,6 @@ When recommending searches, be specific about what information you need and why 
 
         return False
 
-    def _get_available_models(self) -> list[str]:
-        """
-        Get list of models available from enabled providers.
-
-        Only returns models from providers that have valid API keys configured.
-        This fixes the namespace collision bug where models from disabled providers
-        were shown to Claude, causing routing conflicts.
-
-        Returns:
-            List of model names from enabled providers only
-        """
-        from providers.registry import ModelProviderRegistry
-
-        # Get models from enabled providers only (those with valid API keys)
-        all_models = ModelProviderRegistry.get_available_model_names()
-
-        # Add OpenRouter models if OpenRouter is configured
-        openrouter_key = os.getenv("OPENROUTER_API_KEY")
-        if openrouter_key and openrouter_key != "your_openrouter_api_key_here":
-            try:
-                from config import OPENROUTER_MODELS
-
-                all_models.extend(OPENROUTER_MODELS)
-            except ImportError:
-                pass
-
-        return sorted(set(all_models))
-
     def _resolve_model_context(self, arguments: dict, request) -> tuple[str, Any]:
         """
         Resolve model context and name using centralized logic.

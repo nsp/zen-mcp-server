@@ -295,7 +295,6 @@ def mock_response_factory():
     return _create_response
 
 
-
 @pytest.fixture
 def mock_error_factory():
     """Factory fixture for creating mock errors with various types."""
@@ -487,6 +486,7 @@ class MockHelpers:
                 else:
                     assert not is_retryable or non_retryable
 
+
 @pytest.fixture
 def mock_helpers():
     """Fixture providing access to MockHelpers utilities."""
@@ -497,6 +497,7 @@ def mock_helpers():
 def skip_if_no_api_key(provider_name: str, env_var: str):
     """Skip test if API key environment variable is not set."""
     return pytest.mark.skipif(not os.getenv(env_var), reason=f"{provider_name} API key not available in {env_var}")
+
 
 def parametrize_models(models: list[str]):
     """Create parametrize decorator for testing multiple models."""

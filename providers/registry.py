@@ -21,6 +21,7 @@ class ModelProviderRegistry:
         ProviderType.GOOGLE,  # Direct Gemini access
         ProviderType.OPENAI,  # Direct OpenAI access
         ProviderType.XAI,  # Direct X.AI GROK access
+        ProviderType.VERTEX_AI,  # Google Vertex AI unified provider
         ProviderType.DIAL,  # DIAL unified API access
         ProviderType.CUSTOM,  # Local/self-hosted models
         ProviderType.OPENROUTER,  # Catch-all for cloud models
@@ -94,10 +95,14 @@ class ModelProviderRegistry:
                 # Initialize custom provider with both API key and base URL
                 provider = provider_class(api_key=api_key, base_url=custom_url)
         else:
-            if not api_key:
-                return None
-            # Initialize non-custom provider with just API key
-            provider = provider_class(api_key=api_key)
+            # Vertex AI uses Application Default Credentials and may not need an API key
+            if provider_type == ProviderType.VERTEX_AI:
+                provider = provider_class(api_key=api_key or "")
+            else:
+                if not api_key:
+                    return None
+                # Initialize non-custom provider with just API key
+                provider = provider_class(api_key=api_key)
 
         # Cache the instance
         instance._initialized_providers[provider_type] = provider
@@ -231,6 +236,7 @@ class ModelProviderRegistry:
         """
         key_mapping = {
             ProviderType.GOOGLE: "GEMINI_API_KEY",
+            ProviderType.VERTEX_AI: "VERTEX_AI_API_KEY",  # Optional; ADC usually used
             ProviderType.OPENAI: "OPENAI_API_KEY",
             ProviderType.XAI: "XAI_API_KEY",
             ProviderType.OPENROUTER: "OPENROUTER_API_KEY",

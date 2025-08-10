@@ -2,7 +2,7 @@
 
 import logging
 import threading
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from google.auth import default
@@ -66,7 +66,7 @@ class CredentialManager:
         """Initialize credentials from environment."""
         try:
             self._credentials, self._project_id = default()
-            self._last_refresh = datetime.now()
+            self._last_refresh = datetime.now(timezone.utc)
             logger.info("Google Cloud credentials initialized successfully")
         except DefaultCredentialsError as e:
             logger.error(f"Failed to get default credentials: {e}")
@@ -90,13 +90,13 @@ class CredentialManager:
 
         # Check if approaching expiry
         if hasattr(self._credentials, "expiry") and self._credentials.expiry:
-            time_until_expiry = self._credentials.expiry - datetime.now()
+            time_until_expiry = self._credentials.expiry - datetime.now(timezone.utc)
             if time_until_expiry < self._refresh_threshold:
                 return True
 
         # Check if we haven't refreshed in a while (fallback)
         if self._last_refresh:
-            time_since_refresh = datetime.now() - self._last_refresh
+            time_since_refresh = datetime.now(timezone.utc) - self._last_refresh
             if time_since_refresh > timedelta(hours=1):
                 return True
 
@@ -111,7 +111,7 @@ class CredentialManager:
 
             logger.debug("Refreshing Google Cloud credentials")
             self._credentials.refresh(Request())
-            self._last_refresh = datetime.now()
+            self._last_refresh = datetime.now(timezone.utc)
             logger.debug("Credentials refreshed successfully")
 
         except RefreshError as e:

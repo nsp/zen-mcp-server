@@ -19,9 +19,10 @@ class TestListModelsRestrictions(unittest.TestCase):
         """Set up test environment."""
         # Clear any existing registry state
         ModelProviderRegistry.clear_cache()
-        
+
         # Clear any cached restriction service to ensure clean state
         import utils.model_restrictions
+
         utils.model_restrictions._restriction_service = None
 
         # Create mock OpenRouter provider
@@ -38,6 +39,7 @@ class TestListModelsRestrictions(unittest.TestCase):
         ModelProviderRegistry.clear_cache()
         # Clear any cached restriction service to ensure clean state
         import utils.model_restrictions
+
         utils.model_restrictions._restriction_service = None
         # Clean up environment variables
         for key in ["OPENROUTER_ALLOWED_MODELS", "OPENROUTER_API_KEY", "GEMINI_API_KEY"]:

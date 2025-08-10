@@ -522,13 +522,12 @@ of the evidence, even when it strongly points in one direction.""",
                 response_data["accumulated_responses"] = self.accumulated_responses
 
                 # Add metadata (since we're bypassing the base class metadata addition)
-                model_name = self.get_request_model_name(request)
-                provider = self.get_model_provider(model_name)
+                model_names = self.get_request_model_names()
                 response_data["metadata"] = {
                     "tool_name": self.get_name(),
-                    "model_name": model_name,
-                    "model_used": model_name,
-                    "provider_used": provider.get_provider_type().value,
+                    "model_names": model_names,
+                    "model_used": f"consensus-{len(model_names)}-models",
+                    "provider_used": "consensus",
                 }
 
                 return [TextContent(type="text", text=json.dumps(response_data, indent=2, ensure_ascii=False))]
@@ -772,6 +771,10 @@ of the evidence, even when it strongly points in one direction.""",
         """Store initial prompt for model consultations."""
         self.original_proposal = step_description
         self.initial_prompt = step_description  # Keep for backward compatibility
+
+    def get_request_model_names(self) -> list[str]:
+        """Returns list of all models used for consensus."""
+        return [model.name for model in self.models]
 
     # Required abstract methods from BaseTool
     def get_request_model(self):

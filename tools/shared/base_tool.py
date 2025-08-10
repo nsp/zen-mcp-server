@@ -538,6 +538,19 @@ class BaseTool(ABC):
         """
         pass
 
+    @abstractmethod
+    def get_request_model_names(self) -> list[str]:
+        """
+        Returns list of model names used by this tool.
+
+        For single-model tools, this returns a list with one model name.
+        For multi-model tools (like ConsensusTool), this returns all models used.
+
+        Returns:
+            list[str]: List of model names used by this tool
+        """
+        pass
+
     def validate_file_paths(self, request) -> Optional[str]:
         """
         Validate that all file paths in the request are absolute.

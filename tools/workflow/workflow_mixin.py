@@ -440,6 +440,41 @@ class BaseWorkflowMixin(ABC):
         return f"{expert_context}\n\n=== ESSENTIAL FILES ===\n{file_content}\n=== END ESSENTIAL FILES ==="
 
     # ================================================================================
+    # Model Resolution Helpers
+    # ================================================================================
+
+    def _resolve_model_name_with_fallback(self, request, model_names=None):
+        """
+        Resolve model name with proper fallback to DEFAULT_MODEL.
+
+        This helper centralizes the model resolution logic to prevent
+        duplicated fallback patterns and ensure consistent behavior.
+
+        Args:
+            request: The request object (may have model attribute)
+            model_names: Optional list of predefined model names
+
+        Returns:
+            str: The resolved model name (guaranteed to be non-None)
+        """
+        # Try predefined models first
+        if model_names:
+            return model_names[0]
+
+        # Try request model
+        try:
+            model_name = request.model
+            if model_name:
+                return model_name
+        except AttributeError:
+            pass
+
+        # Fallback to DEFAULT_MODEL
+        from config import DEFAULT_MODEL
+
+        return DEFAULT_MODEL
+
+    # ================================================================================
     # Context-Aware File Embedding - Core Implementation
     # ================================================================================
 
@@ -535,7 +570,9 @@ class BaseWorkflowMixin(ABC):
                     # Create fallback model context (preserves existing test behavior)
                     from utils.model_context import ModelContext
 
-                    model_name = self.get_request_model_name(request)
+                    model_names = self.get_request_model_names()
+                    model_name = self._resolve_model_name_with_fallback(request, model_names)
+
                     self._model_context = ModelContext(model_name)
                     self._current_model_name = model_name
 
@@ -1159,7 +1196,8 @@ class BaseWorkflowMixin(ABC):
             else:
                 # Fallback - try to get model info from request
                 request = self.get_workflow_request_model()(**arguments)
-                model_name = self.get_request_model_name(request)
+                model_names = self.get_request_model_names()
+                model_name = self._resolve_model_name_with_fallback(request, model_names)
 
                 # Basic metadata without provider info
                 metadata = {
@@ -1440,7 +1478,9 @@ class BaseWorkflowMixin(ABC):
                 except Exception as e:
                     logger.error(f"Failed to resolve model context for expert analysis: {e}")
                     # Use request model as fallback (preserves existing test behavior)
-                    model_name = self.get_request_model_name(request)
+                    model_names = self.get_request_model_names()
+                    model_name = self._resolve_model_name_with_fallback(request, model_names)
+
                     from utils.model_context import ModelContext
 
                     model_context = ModelContext(model_name)

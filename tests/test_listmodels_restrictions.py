@@ -23,6 +23,10 @@ class TestListModelsRestrictions(unittest.TestCase):
 
         utils.model_restrictions._restriction_service = None
 
+        # Register OpenRouter provider so it can be found by the registry
+        from providers.openrouter import OpenRouterProvider
+        ModelProviderRegistry.register_provider(ProviderType.OPENROUTER, OpenRouterProvider)
+
         # Create mock OpenRouter provider
         self.mock_openrouter = MagicMock(spec=ModelProvider)
         self.mock_openrouter.provider_type = ProviderType.OPENROUTER

@@ -390,8 +390,8 @@ def configure_providers():
     from providers.gemini import GeminiModelProvider
     from providers.openai_provider import OpenAIModelProvider
     from providers.openrouter import OpenRouterProvider
-    from providers.xai import XAIModelProvider
     from providers.vertex_ai import VertexAIModelProvider
+    from providers.xai import XAIModelProvider
     from utils.model_restrictions import get_restriction_service
 
     valid_providers = []
@@ -439,14 +439,16 @@ def configure_providers():
     if vertex_project_id:
         try:
             # Test if we can initialize Vertex AI provider
-            test_provider = VertexAIModelProvider()
+            VertexAIModelProvider()
             valid_providers.append(f"Vertex AI (Project: {vertex_project_id})")
             has_vertex_ai = True
             has_native_apis = True
             logger.info(f"Vertex AI configured for project: {vertex_project_id}")
         except Exception as e:
             logger.warning(f"Vertex AI configuration found but failed to initialize: {e}")
-            logger.info("Ensure 'gcloud auth application-default login' is configured or set GOOGLE_APPLICATION_CREDENTIALS")
+            logger.info(
+                "Ensure 'gcloud auth application-default login' is configured or set GOOGLE_APPLICATION_CREDENTIALS"
+            )
 
     # Check for OpenRouter API key
     openrouter_key = os.getenv("OPENROUTER_API_KEY")

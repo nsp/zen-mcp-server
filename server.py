@@ -713,6 +713,8 @@ async def handle_call_tool(name: str, arguments: dict[str, Any]) -> list[TextCon
         3. Claude continues with codereview tool + continuation_id → full context preserved
         4. Multiple tools can collaborate using same thread ID
     """
+    import traceback
+    
     logger.info(f"MCP tool call: {name}")
     logger.debug(f"MCP tool arguments: {list(arguments.keys())}")
 
@@ -723,125 +725,169 @@ async def handle_call_tool(name: str, arguments: dict[str, Any]) -> list[TextCon
     except Exception:
         pass
 
-    # Handle thread context reconstruction if continuation_id is present
-    if "continuation_id" in arguments and arguments["continuation_id"]:
-        continuation_id = arguments["continuation_id"]
-        logger.debug(f"Resuming conversation thread: {continuation_id}")
-        logger.debug(
-            f"[CONVERSATION_DEBUG] Tool '{name}' resuming thread {continuation_id} with {len(arguments)} arguments"
-        )
-        logger.debug(f"[CONVERSATION_DEBUG] Original arguments keys: {list(arguments.keys())}")
+    try:
+        # Handle thread context reconstruction if continuation_id is present
+        if "continuation_id" in arguments and arguments["continuation_id"]:
+            continuation_id = arguments["continuation_id"]
+            logger.debug(f"Resuming conversation thread: {continuation_id}")
+            logger.debug(
+                f"[CONVERSATION_DEBUG] Tool '{name}' resuming thread {continuation_id} with {len(arguments)} arguments"
+            )
+            logger.debug(f"[CONVERSATION_DEBUG] Original arguments keys: {list(arguments.keys())}")
 
-        # Log to activity file for monitoring
-        try:
-            mcp_activity_logger = logging.getLogger("mcp_activity")
-            mcp_activity_logger.info(f"CONVERSATION_RESUME: {name} resuming thread {continuation_id}")
-        except Exception:
-            pass
+            # Log to activity file for monitoring
+            try:
+                mcp_activity_logger = logging.getLogger("mcp_activity")
+                mcp_activity_logger.info(f"CONVERSATION_RESUME: {name} resuming thread {continuation_id}")
+            except Exception:
+                pass
 
-        arguments = await reconstruct_thread_context(arguments)
-        logger.debug(f"[CONVERSATION_DEBUG] After thread reconstruction, arguments keys: {list(arguments.keys())}")
-        if "_remaining_tokens" in arguments:
-            logger.debug(f"[CONVERSATION_DEBUG] Remaining token budget: {arguments['_remaining_tokens']:,}")
+            arguments = await reconstruct_thread_context(arguments)
+            logger.debug(f"[CONVERSATION_DEBUG] After thread reconstruction, arguments keys: {list(arguments.keys())}")
+            if "_remaining_tokens" in arguments:
+                logger.debug(f"[CONVERSATION_DEBUG] Remaining token budget: {arguments['_remaining_tokens']:,}")
 
-    # Route to AI-powered tools that require Gemini API calls
-    if name in TOOLS:
-        logger.info(f"Executing tool '{name}' with {len(arguments)} parameter(s)")
-        tool = TOOLS[name]
+        # Route to AI-powered tools that require Gemini API calls
+        if name in TOOLS:
+            logger.info(f"Executing tool '{name}' with {len(arguments)} parameter(s)")
+            tool = TOOLS[name]
 
-        # EARLY MODEL RESOLUTION AT MCP BOUNDARY
-        # Resolve model before passing to tool - this ensures consistent model handling
-        # NOTE: Consensus tool is exempt as it handles multiple models internally
-        from providers.registry import ModelProviderRegistry
-        from utils.file_utils import check_total_file_size
-        from utils.model_context import ModelContext
+            # EARLY MODEL RESOLUTION AT MCP BOUNDARY
+            # Resolve model before passing to tool - this ensures consistent model handling
+            # NOTE: Consensus tool is exempt as it handles multiple models internally
+            from providers.registry import ModelProviderRegistry
+            from utils.file_utils import check_total_file_size
+            from utils.model_context import ModelContext
 
-        # Get model from arguments or use default
-        model_name = arguments.get("model") or DEFAULT_MODEL
-        logger.debug(f"Initial model for {name}: {model_name}")
+            # Get model from arguments or use default
+            model_name = arguments.get("model") or DEFAULT_MODEL
+            logger.debug(f"Initial model for {name}: {model_name}")
 
-        # Parse model:option format if present
-        model_name, model_option = parse_model_option(model_name)
-        if model_option:
-            logger.info(f"Parsed model format - model: '{model_name}', option: '{model_option}'")
+            # Parse model:option format if present
+            model_name, model_option = parse_model_option(model_name)
+            if model_option:
+                logger.info(f"Parsed model format - model: '{model_name}', option: '{model_option}'")
+            else:
+                logger.info(f"Parsed model format - model: '{model_name}'")
+
+            # Consensus tool handles its own model configuration validation
+            # No special handling needed at server level
+
+            # Skip model resolution for tools that don't require models (e.g., planner)
+            if not tool.requires_model():
+                logger.debug(f"Tool {name} doesn't require model resolution - skipping model validation")
+                # Execute tool directly without model context
+                return await tool.execute(arguments)
+
+            # Handle auto mode at MCP boundary - resolve to specific model
+            if model_name.lower() == "auto":
+                # Get tool category to determine appropriate model
+                tool_category = tool.get_model_category()
+                resolved_model = ModelProviderRegistry.get_preferred_fallback_model(tool_category)
+                logger.info(f"Auto mode resolved to {resolved_model} for {name} (category: {tool_category.value})")
+                model_name = resolved_model
+                # Update arguments with resolved model
+                arguments["model"] = model_name
+
+            # Validate model availability at MCP boundary
+            provider = ModelProviderRegistry.get_provider_for_model(model_name)
+            if not provider:
+                # Get list of available models for error message
+                available_models = list(ModelProviderRegistry.get_available_models(respect_restrictions=True).keys())
+                tool_category = tool.get_model_category()
+                suggested_model = ModelProviderRegistry.get_preferred_fallback_model(tool_category)
+
+                error_message = (
+                    f"Model '{model_name}' is not available with current API keys. "
+                    f"Available models: {', '.join(available_models)}. "
+                    f"Suggested model for {name}: '{suggested_model}' "
+                    f"(category: {tool_category.value})"
+                )
+                error_output = ToolOutput(
+                    status="error",
+                    content=error_message,
+                    content_type="text",
+                    metadata={"tool_name": name, "requested_model": model_name},
+                )
+                return [TextContent(type="text", text=error_output.model_dump_json())]
+
+            # Create model context with resolved model and option
+            model_context = ModelContext(model_name, model_option)
+            arguments["_model_context"] = model_context
+            arguments["_resolved_model_name"] = model_name
+            logger.debug(
+                f"Model context created for {model_name} with {model_context.capabilities.context_window} token capacity"
+            )
+            if model_option:
+                logger.debug(f"Model option stored in context: '{model_option}'")
+
+            # EARLY FILE SIZE VALIDATION AT MCP BOUNDARY
+            # Check file sizes before tool execution using resolved model
+            if "files" in arguments and arguments["files"]:
+                logger.debug(f"Checking file sizes for {len(arguments['files'])} files with model {model_name}")
+                file_size_check = check_total_file_size(arguments["files"], model_name)
+                if file_size_check:
+                    logger.warning(f"File size check failed for {name} with model {model_name}")
+                    return [TextContent(type="text", text=ToolOutput(**file_size_check).model_dump_json())]
+
+            # Execute tool with pre-resolved model context
+            result = await tool.execute(arguments)
+            logger.info(f"Tool '{name}' execution completed")
+
+            # Log completion to activity file
+            try:
+                mcp_activity_logger = logging.getLogger("mcp_activity")
+                mcp_activity_logger.info(f"TOOL_COMPLETED: {name}")
+            except Exception:
+                pass
+            return result
+
+        # Handle unknown tool requests gracefully
         else:
-            logger.info(f"Parsed model format - model: '{model_name}'")
-
-        # Consensus tool handles its own model configuration validation
-        # No special handling needed at server level
-
-        # Skip model resolution for tools that don't require models (e.g., planner)
-        if not tool.requires_model():
-            logger.debug(f"Tool {name} doesn't require model resolution - skipping model validation")
-            # Execute tool directly without model context
-            return await tool.execute(arguments)
-
-        # Handle auto mode at MCP boundary - resolve to specific model
-        if model_name.lower() == "auto":
-            # Get tool category to determine appropriate model
-            tool_category = tool.get_model_category()
-            resolved_model = ModelProviderRegistry.get_preferred_fallback_model(tool_category)
-            logger.info(f"Auto mode resolved to {resolved_model} for {name} (category: {tool_category.value})")
-            model_name = resolved_model
-            # Update arguments with resolved model
-            arguments["model"] = model_name
-
-        # Validate model availability at MCP boundary
-        provider = ModelProviderRegistry.get_provider_for_model(model_name)
-        if not provider:
-            # Get list of available models for error message
-            available_models = list(ModelProviderRegistry.get_available_models(respect_restrictions=True).keys())
-            tool_category = tool.get_model_category()
-            suggested_model = ModelProviderRegistry.get_preferred_fallback_model(tool_category)
-
-            error_message = (
-                f"Model '{model_name}' is not available with current API keys. "
-                f"Available models: {', '.join(available_models)}. "
-                f"Suggested model for {name}: '{suggested_model}' "
-                f"(category: {tool_category.value})"
-            )
-            error_output = ToolOutput(
-                status="error",
-                content=error_message,
-                content_type="text",
-                metadata={"tool_name": name, "requested_model": model_name},
-            )
-            return [TextContent(type="text", text=error_output.model_dump_json())]
-
-        # Create model context with resolved model and option
-        model_context = ModelContext(model_name, model_option)
-        arguments["_model_context"] = model_context
-        arguments["_resolved_model_name"] = model_name
-        logger.debug(
-            f"Model context created for {model_name} with {model_context.capabilities.context_window} token capacity"
-        )
-        if model_option:
-            logger.debug(f"Model option stored in context: '{model_option}'")
-
-        # EARLY FILE SIZE VALIDATION AT MCP BOUNDARY
-        # Check file sizes before tool execution using resolved model
-        if "files" in arguments and arguments["files"]:
-            logger.debug(f"Checking file sizes for {len(arguments['files'])} files with model {model_name}")
-            file_size_check = check_total_file_size(arguments["files"], model_name)
-            if file_size_check:
-                logger.warning(f"File size check failed for {name} with model {model_name}")
-                return [TextContent(type="text", text=ToolOutput(**file_size_check).model_dump_json())]
-
-        # Execute tool with pre-resolved model context
-        result = await tool.execute(arguments)
-        logger.info(f"Tool '{name}' execution completed")
-
-        # Log completion to activity file
+            return [TextContent(type="text", text=f"Unknown tool: {name}")]
+            
+    except Exception as e:
+        # Log the full error with stack trace
+        full_traceback = traceback.format_exc()
+        logger.error(f"Tool execution error for '{name}': {str(e)}")
+        logger.error(f"Full stack trace:\n{full_traceback}")
+        
+        # Log error to activity file for monitoring
         try:
             mcp_activity_logger = logging.getLogger("mcp_activity")
-            mcp_activity_logger.info(f"TOOL_COMPLETED: {name}")
+            mcp_activity_logger.error(f"TOOL_ERROR: {name} failed with {type(e).__name__}: {str(e)}")
         except Exception:
             pass
-        return result
-
-    # Handle unknown tool requests gracefully
-    else:
-        return [TextContent(type="text", text=f"Unknown tool: {name}")]
+        
+        # Create comprehensive error response with full stack trace
+        error_response = {
+            "status": "error",
+            "error_type": type(e).__name__,
+            "error_message": str(e),
+            "tool_name": name,
+            "stack_trace": full_traceback,
+            "debugging_info": {
+                "arguments_provided": list(arguments.keys()) if arguments else [],
+                "error_location": f"{type(e).__module__}.{type(e).__name__}",
+                "suggestions": [
+                    "Check the tool documentation for required parameters",
+                    "Verify that all required arguments are provided",
+                    "Check server logs for additional context",
+                    "Ensure API keys are properly configured if using AI models"
+                ]
+            }
+        }
+        
+        # Return structured error with full debugging information
+        from tools.models import ToolOutput
+        error_output = ToolOutput(
+            status="error",
+            content=f"Tool execution failed: {str(e)}\n\nFull Stack Trace:\n{full_traceback}",
+            content_type="text",
+            metadata=error_response
+        )
+        
+        return [TextContent(type="text", text=error_output.model_dump_json())]
 
 
 def parse_model_option(model_string: str) -> tuple[str, Optional[str]]:

@@ -60,17 +60,25 @@ Get a consensus from gemini supporting the idea for implementing X, grok opposin
 - **Conversation continuation**: Build on previous consensus analysis with additional rounds
 - **Web search capability**: Enhanced analysis with current best practices and documentation
 
-## Tool Parameters
+## Tool Parameters (Workflow Tool)
 
-- `prompt`: Detailed description of the proposal or decision to analyze (required)
-- `models`: List of model configurations with optional stance and custom instructions (required)
-- `files`: Context files for informed analysis (absolute paths)
+**IMPORTANT**: Consensus is a workflow tool that requires step-by-step execution. The first call must include:
+
+### Required Parameters for Step 1:
+- `step`: The exact question or proposal that ALL models will evaluate (required)
+- `step_number`: Always `1` for the first call (required)
+- `total_steps`: Number of models to consult (typically equals length of models array) (required)  
+- `next_step_required`: Set to `true` to continue workflow (required)
+- `findings`: Your initial analysis of the proposal (required)
+- `models`: List of model configurations with stance and custom instructions (required)
+
+### Optional Parameters:
+- `relevant_files`: Context files for informed analysis (absolute paths)
 - `images`: Visual references like diagrams or mockups (absolute paths)
-- `focus_areas`: Specific aspects to emphasize
-- `temperature`: Control consistency (default: 0.2 for stable consensus)
-- `thinking_mode`: Analysis depth (minimal/low/medium/high/max)
-- `use_websearch`: Enable research for enhanced analysis (default: true)
-- `continuation_id`: Continue previous consensus discussions
+- `model`: Model to use for the workflow orchestration (default: auto-selected)
+
+### Subsequent Steps:
+After step 1, continue with `step_number: 2, 3, etc.` until `total_steps` is reached. Each step processes one model's response.
 
 ## Model Configuration Examples
 
@@ -99,6 +107,25 @@ Get a consensus from gemini supporting the idea for implementing X, grok opposin
 ```
 
 ## Usage Examples
+
+### **Correct Tool Call Example:**
+
+```json
+{
+  "step": "Should we migrate from REST to GraphQL for our API?",
+  "step_number": 1,
+  "total_steps": 3,
+  "next_step_required": true,
+  "findings": "GraphQL could provide better flexibility for our frontend teams and reduce over-fetching, but introduces complexity and learning curve. Need to evaluate trade-offs between developer experience, performance, and maintenance overhead.",
+  "models": [
+    {"model": "gemini-2.5-flash", "stance": "for"},
+    {"model": "gemini-2.0-flash-001", "stance": "against"}, 
+    {"model": "gemini-2.5-pro", "stance": "neutral"}
+  ]
+}
+```
+
+### **Natural Language Usage (Claude interprets):**
 
 **Architecture Decision:**
 ```

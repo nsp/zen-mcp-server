@@ -314,6 +314,7 @@ of the evidence, even when it strongly points in one direction.""",
         # Include model field for compatibility but don't require it
         schema = WorkflowSchemaBuilder.build_schema(
             tool_specific_fields=consensus_field_overrides,
+            required_fields=["models"],  # Add models as required field for MCP clients
             model_field_schema=self.get_model_field_schema(),
             auto_mode=False,  # Consensus doesn't require model at MCP boundary
             tool_name=self.get_name(),
@@ -774,7 +775,9 @@ of the evidence, even when it strongly points in one direction.""",
 
     def get_request_model_names(self) -> list[str]:
         """Returns list of all models used for consensus."""
-        return [model.name for model in self.models]
+        if not self.models_to_consult:
+            return []
+        return [model_config["model"] for model_config in self.models_to_consult]
 
     # Required abstract methods from BaseTool
     def get_request_model(self):

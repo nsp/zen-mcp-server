@@ -51,28 +51,30 @@ class GeminiModelRegistry:
     # These are based on Google's official documentation and represent
     # the canonical capabilities of each model
     CANONICAL_SPECS: dict[str, GeminiModelSpec] = {
-        "gemini-2.0-flash": GeminiModelSpec(
-            model_id="gemini-2.0-flash",
-            friendly_name="Gemini 2.0 Flash",
+        # Gemini 2.0 Models
+        "gemini-2.0-flash-001": GeminiModelSpec(
+            model_id="gemini-2.0-flash-001",
+            friendly_name="Gemini 2.0 Flash (001)",
             base_context_window=1_048_576,  # 1M tokens
             base_max_output_tokens=65_536,
             supports_extended_thinking=True,
-            max_thinking_tokens=24576,  # Same as 2.5 flash for consistency
+            max_thinking_tokens=24576,
             supports_images=True,
             max_image_size_mb=20.0,
-            description="Latest fast model with experimental thinking, supports audio/video input",
+            description="Latest Gemini 2.0 Flash model with enhanced capabilities",
         ),
-        "gemini-2.0-flash-lite": GeminiModelSpec(
-            model_id="gemini-2.0-flash-lite",
-            friendly_name="Gemini 2.0 Flash-Lite",
+        "gemini-2.0-flash-lite-001": GeminiModelSpec(
+            model_id="gemini-2.0-flash-lite-001",
+            friendly_name="Gemini 2.0 Flash-Lite (001)",
             base_context_window=1_048_576,  # 1M tokens
             base_max_output_tokens=65_536,
             supports_extended_thinking=False,
             max_thinking_tokens=0,
             supports_images=False,  # Lite version doesn't support images
             max_image_size_mb=0.0,
-            description="Lightweight fast model, text-only",
+            description="Lightweight Gemini 2.0 Flash model, text-only",
         ),
+        # Gemini 2.5 Models
         "gemini-2.5-flash": GeminiModelSpec(
             model_id="gemini-2.5-flash",
             friendly_name="Gemini 2.5 Flash",
@@ -84,16 +86,16 @@ class GeminiModelRegistry:
             max_image_size_mb=20.0,
             description="Ultra-fast model - Quick analysis, simple queries, rapid iterations",
         ),
-        "gemini-2.5-flash-lite": GeminiModelSpec(
-            model_id="gemini-2.5-flash-lite",
-            friendly_name="Gemini 2.5 Flash-Lite",
+        "gemini-2.5-flash-lite-preview-06-17": GeminiModelSpec(
+            model_id="gemini-2.5-flash-lite-preview-06-17",
+            friendly_name="Gemini 2.5 Flash-Lite (Preview)",
             base_context_window=1_000_000,  # 1M context
             base_max_output_tokens=8_192,
             supports_extended_thinking=False,
             max_thinking_tokens=0,
             supports_images=True,
             max_image_size_mb=20.0,
-            description="Most cost-effective model for high throughput tasks",
+            description="Preview version of cost-effective model for high throughput tasks",
         ),
         "gemini-2.5-pro": GeminiModelSpec(
             model_id="gemini-2.5-pro",
@@ -106,6 +108,7 @@ class GeminiModelRegistry:
             max_image_size_mb=32.0,  # Higher limit for Pro model
             description="Deep reasoning + thinking mode - Complex problems, architecture, deep analysis",
         ),
+        # Legacy 1.5 Models (for backward compatibility)
         "gemini-1.5-pro-002": GeminiModelSpec(
             model_id="gemini-1.5-pro-002",
             friendly_name="Gemini 1.5 Pro (Legacy)",
@@ -127,6 +130,63 @@ class GeminiModelRegistry:
             supports_images=True,
             max_image_size_mb=20.0,
             description="Legacy Gemini 1.5 Flash model (1M context)",
+        ),
+        # Legacy Pro Vision Model
+        "gemini-pro-vision": GeminiModelSpec(
+            model_id="gemini-pro-vision",
+            friendly_name="Gemini Pro Vision (Legacy)",
+            base_context_window=32_000,
+            base_max_output_tokens=4_096,
+            supports_extended_thinking=False,
+            max_thinking_tokens=0,
+            supports_images=True,
+            max_image_size_mb=20.0,
+            description="Legacy Gemini Pro model with vision capabilities",
+        ),
+        "gemini-pro": GeminiModelSpec(
+            model_id="gemini-pro",
+            friendly_name="Gemini Pro (Legacy)",
+            base_context_window=32_000,
+            base_max_output_tokens=4_096,
+            supports_extended_thinking=False,
+            max_thinking_tokens=0,
+            supports_images=False,
+            max_image_size_mb=0.0,
+            description="Legacy Gemini Pro model, text-only",
+        ),
+        # Alias models for backward compatibility
+        "gemini-2.0-flash": GeminiModelSpec(
+            model_id="gemini-2.0-flash",
+            friendly_name="Gemini 2.0 Flash",
+            base_context_window=1_048_576,  # 1M tokens
+            base_max_output_tokens=65_536,
+            supports_extended_thinking=True,
+            max_thinking_tokens=24576,
+            supports_images=True,
+            max_image_size_mb=20.0,
+            description="Latest fast model with experimental thinking, supports audio/video input",
+        ),
+        "gemini-2.0-flash-lite": GeminiModelSpec(
+            model_id="gemini-2.0-flash-lite",
+            friendly_name="Gemini 2.0 Flash-Lite",
+            base_context_window=1_048_576,  # 1M tokens
+            base_max_output_tokens=65_536,
+            supports_extended_thinking=False,
+            max_thinking_tokens=0,
+            supports_images=False,  # Lite version doesn't support images
+            max_image_size_mb=0.0,
+            description="Lightweight fast model, text-only",
+        ),
+        "gemini-2.5-flash-lite": GeminiModelSpec(
+            model_id="gemini-2.5-flash-lite",
+            friendly_name="Gemini 2.5 Flash-Lite",
+            base_context_window=1_000_000,  # 1M context
+            base_max_output_tokens=8_192,
+            supports_extended_thinking=False,
+            max_thinking_tokens=0,
+            supports_images=True,
+            max_image_size_mb=20.0,
+            description="Most cost-effective model for high throughput tasks",
         ),
         "gemini-2.0-flash-exp": GeminiModelSpec(
             model_id="gemini-2.0-flash-exp",

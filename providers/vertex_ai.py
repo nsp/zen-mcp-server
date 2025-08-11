@@ -45,6 +45,7 @@ class VertexAIModelProvider(ModelProvider):
 
     # Claude models (coding-suitable models from available list)
     CLAUDE_MODELS = {
+        # Claude 4 Models
         "claude-opus-4": ModelCapabilities(
             provider=ProviderType.VERTEX_AI,
             model_name="claude-opus-4",
@@ -57,6 +58,18 @@ class VertexAIModelProvider(ModelProvider):
             temperature_constraint=create_temperature_constraint("range"),
             aliases=["vertex-claude-opus-4", "vertex-opus-4"],
         ),
+        "claude-opus-4-1": ModelCapabilities(
+            provider=ProviderType.VERTEX_AI,
+            model_name="claude-opus-4-1",
+            friendly_name="Claude Opus 4.1 (Vertex AI)",
+            context_window=200_000,
+            max_output_tokens=8_192,
+            supports_system_prompts=True,
+            supports_images=True,
+            supports_temperature=True,
+            temperature_constraint=create_temperature_constraint("range"),
+            aliases=["vertex-claude-opus-4-1", "vertex-opus-4-1"],
+        ),
         "claude-sonnet-4": ModelCapabilities(
             provider=ProviderType.VERTEX_AI,
             model_name="claude-sonnet-4",
@@ -68,6 +81,69 @@ class VertexAIModelProvider(ModelProvider):
             supports_temperature=True,
             temperature_constraint=create_temperature_constraint("range"),
             aliases=["vertex-claude-sonnet-4", "vertex-sonnet-4"],
+        ),
+        # Claude 3.7 Models
+        "claude-3-7-sonnet": ModelCapabilities(
+            provider=ProviderType.VERTEX_AI,
+            model_name="claude-3-7-sonnet",
+            friendly_name="Claude 3.7 Sonnet (Vertex AI)",
+            context_window=200_000,
+            max_output_tokens=8_192,
+            supports_system_prompts=True,
+            supports_images=True,
+            supports_temperature=True,
+            temperature_constraint=create_temperature_constraint("range"),
+            aliases=["vertex-claude-3-7-sonnet"],
+        ),
+        # Claude 3.5 Models
+        "claude-3-5-sonnet": ModelCapabilities(
+            provider=ProviderType.VERTEX_AI,
+            model_name="claude-3-5-sonnet",
+            friendly_name="Claude 3.5 Sonnet (Vertex AI)",
+            context_window=200_000,
+            max_output_tokens=8_192,
+            supports_system_prompts=True,
+            supports_images=True,
+            supports_temperature=True,
+            temperature_constraint=create_temperature_constraint("range"),
+            aliases=["vertex-claude-3-5-sonnet"],
+        ),
+        "claude-3-5-sonnet-v2": ModelCapabilities(
+            provider=ProviderType.VERTEX_AI,
+            model_name="claude-3-5-sonnet-v2",
+            friendly_name="Claude 3.5 Sonnet v2 (Vertex AI)",
+            context_window=200_000,
+            max_output_tokens=8_192,
+            supports_system_prompts=True,
+            supports_images=True,
+            supports_temperature=True,
+            temperature_constraint=create_temperature_constraint("range"),
+            aliases=["vertex-claude-3-5-sonnet-v2"],
+        ),
+        "claude-3-5-haiku": ModelCapabilities(
+            provider=ProviderType.VERTEX_AI,
+            model_name="claude-3-5-haiku",
+            friendly_name="Claude 3.5 Haiku (Vertex AI)",
+            context_window=200_000,
+            max_output_tokens=8_192,
+            supports_system_prompts=True,
+            supports_images=True,
+            supports_temperature=True,
+            temperature_constraint=create_temperature_constraint("range"),
+            aliases=["vertex-claude-3-5-haiku"],
+        ),
+        # Claude 3 Models
+        "claude-3-haiku": ModelCapabilities(
+            provider=ProviderType.VERTEX_AI,
+            model_name="claude-3-haiku",
+            friendly_name="Claude 3 Haiku (Vertex AI)",
+            context_window=200_000,
+            max_output_tokens=4_096,
+            supports_system_prompts=True,
+            supports_images=True,
+            supports_temperature=True,
+            temperature_constraint=create_temperature_constraint("range"),
+            aliases=["vertex-claude-3-haiku"],
         ),
     }
 

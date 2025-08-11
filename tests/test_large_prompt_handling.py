@@ -241,17 +241,30 @@ class TestLargePromptHandling:
         tool = ChatTool()
         other_file = "/some/other/file.py"
 
-        with patch.object(tool, "get_model_provider") as mock_get_provider:
-            mock_provider = MagicMock()
-            mock_provider.get_provider_type.return_value = MagicMock(value="google")
-            mock_provider.supports_thinking_mode.return_value = False
-            mock_provider.generate_content.return_value = MagicMock(
-                content="Success",
-                usage={"input_tokens": 10, "output_tokens": 20, "total_tokens": 30},
-                model_name="gemini-2.5-flash",
-                metadata={"finish_reason": "STOP"},
-            )
+        with (
+            patch("providers.registry.ModelProviderRegistry.get_provider_for_model") as mock_get_provider,
+            patch("utils.model_context.ModelContext") as mock_model_context_class,
+        ):
+            from tests.mock_helpers import create_mock_provider
+
+            mock_provider = create_mock_provider(model_name="gemini-2.5-flash", context_window=1_048_576)
+            mock_provider.generate_content.return_value.content = "Success"
             mock_get_provider.return_value = mock_provider
+
+            # Mock ModelContext to avoid the comparison issue
+            from utils.model_context import TokenAllocation
+
+            mock_model_context = MagicMock()
+            mock_model_context.model_name = "gemini-2.5-flash"
+            mock_model_context.provider = mock_provider
+            mock_model_context.token_allocation = TokenAllocation(
+                total_tokens=1_048_576,
+                content_tokens=900_000,
+                response_tokens=100_000,
+                file_tokens=25_000,
+                history_tokens=23_576,
+            )
+            mock_model_context_class.return_value = mock_model_context
 
             # Mock handle_prompt_file to verify prompt.txt is handled
             with patch.object(tool, "handle_prompt_file") as mock_handle_prompt:
@@ -283,18 +296,31 @@ class TestLargePromptHandling:
         tool = ChatTool()
         exact_prompt = "x" * MCP_PROMPT_SIZE_LIMIT
 
-        # Mock the model provider to avoid real API calls
-        with patch.object(tool, "get_model_provider") as mock_get_provider:
-            mock_provider = MagicMock()
-            mock_provider.get_provider_type.return_value = MagicMock(value="google")
-            mock_provider.supports_thinking_mode.return_value = False
-            mock_provider.generate_content.return_value = MagicMock(
-                content="Response to the large prompt",
-                usage={"input_tokens": 12000, "output_tokens": 10, "total_tokens": 12010},
-                model_name="gemini-2.5-flash",
-                metadata={"finish_reason": "STOP"},
-            )
+        # Mock the model provider registry to avoid real API calls
+        with (
+            patch("providers.registry.ModelProviderRegistry.get_provider_for_model") as mock_get_provider,
+            patch("utils.model_context.ModelContext") as mock_model_context_class,
+        ):
+            from tests.mock_helpers import create_mock_provider
+
+            mock_provider = create_mock_provider(model_name="gemini-2.5-flash", context_window=1_048_576)
+            mock_provider.generate_content.return_value.content = "Response to the large prompt"
             mock_get_provider.return_value = mock_provider
+
+            # Mock ModelContext to avoid the comparison issue
+            from utils.model_context import TokenAllocation
+
+            mock_model_context = MagicMock()
+            mock_model_context.model_name = "gemini-2.5-flash"
+            mock_model_context.provider = mock_provider
+            mock_model_context.token_allocation = TokenAllocation(
+                total_tokens=1_048_576,
+                content_tokens=900_000,
+                response_tokens=100_000,
+                file_tokens=25_000,
+                history_tokens=23_576,
+            )
+            mock_model_context_class.return_value = mock_model_context
 
             # With the fix, this should now pass because we check at MCP transport boundary before adding internal content
             result = await tool.execute({"prompt": exact_prompt})
@@ -316,17 +342,30 @@ class TestLargePromptHandling:
         """Test empty prompt without prompt.txt file."""
         tool = ChatTool()
 
-        with patch.object(tool, "get_model_provider") as mock_get_provider:
-            mock_provider = MagicMock()
-            mock_provider.get_provider_type.return_value = MagicMock(value="google")
-            mock_provider.supports_thinking_mode.return_value = False
-            mock_provider.generate_content.return_value = MagicMock(
-                content="Success",
-                usage={"input_tokens": 10, "output_tokens": 20, "total_tokens": 30},
-                model_name="gemini-2.5-flash",
-                metadata={"finish_reason": "STOP"},
-            )
+        with (
+            patch("providers.registry.ModelProviderRegistry.get_provider_for_model") as mock_get_provider,
+            patch("utils.model_context.ModelContext") as mock_model_context_class,
+        ):
+            from tests.mock_helpers import create_mock_provider
+
+            mock_provider = create_mock_provider(model_name="gemini-2.5-flash", context_window=1_048_576)
+            mock_provider.generate_content.return_value.content = "Success"
             mock_get_provider.return_value = mock_provider
+
+            # Mock ModelContext to avoid the comparison issue
+            from utils.model_context import TokenAllocation
+
+            mock_model_context = MagicMock()
+            mock_model_context.model_name = "gemini-2.5-flash"
+            mock_model_context.provider = mock_provider
+            mock_model_context.token_allocation = TokenAllocation(
+                total_tokens=1_048_576,
+                content_tokens=900_000,
+                response_tokens=100_000,
+                file_tokens=25_000,
+                history_tokens=23_576,
+            )
+            mock_model_context_class.return_value = mock_model_context
 
             result = await tool.execute({"prompt": ""})
             output = json.loads(result[0].text)
@@ -341,7 +380,7 @@ class TestLargePromptHandling:
         bad_file = "/nonexistent/prompt.txt"
 
         with (
-            patch.object(tool, "get_model_provider") as mock_get_provider,
+            patch("providers.registry.ModelProviderRegistry.get_provider_for_model") as mock_get_provider,
             patch("utils.model_context.ModelContext") as mock_model_context_class,
         ):
 
@@ -386,7 +425,7 @@ class TestLargePromptHandling:
         huge_history = "x" * (MCP_PROMPT_SIZE_LIMIT * 2)  # 100K chars = way over 50K limit
 
         with (
-            patch.object(tool, "get_model_provider") as mock_get_provider,
+            patch("providers.registry.ModelProviderRegistry.get_provider_for_model") as mock_get_provider,
             patch("utils.model_context.ModelContext") as mock_model_context_class,
         ):
             from tests.mock_helpers import create_mock_provider
@@ -504,7 +543,7 @@ class TestLargePromptHandling:
         assert len(huge_conversation_history) > MCP_PROMPT_SIZE_LIMIT
 
         with (
-            patch.object(tool, "get_model_provider") as mock_get_provider,
+            patch("providers.registry.ModelProviderRegistry.get_provider_for_model") as mock_get_provider,
             patch("utils.model_context.ModelContext") as mock_model_context_class,
         ):
             from tests.mock_helpers import create_mock_provider

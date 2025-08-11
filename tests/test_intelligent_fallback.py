@@ -23,15 +23,16 @@ class TestIntelligentFallback:
         self._original_providers = registry._providers.copy()
         self._original_initialized = registry._initialized_providers.copy()
 
-        # Clear registry completely
-        ModelProviderRegistry._instance = None
+        # Clear registry completely using public API
+        ModelProviderRegistry.reset_for_testing()
 
     def teardown_method(self):
         """Cleanup after each test - restore original providers"""
+        # Clear registry first
+        ModelProviderRegistry.reset_for_testing()
+
         # Restore original registry state
         registry = ModelProviderRegistry()
-        registry._providers.clear()
-        registry._initialized_providers.clear()
         registry._providers.update(self._original_providers)
         registry._initialized_providers.update(self._original_initialized)
 
@@ -90,7 +91,7 @@ class TestIntelligentFallback:
 
         with patch.dict(os.environ, {"OPENAI_API_KEY": "sk-test-key", "GEMINI_API_KEY": ""}, clear=False):
             # Clear and register providers
-            ModelProviderRegistry._instance = None
+            ModelProviderRegistry.reset_for_testing()
             ModelProviderRegistry.register_provider(ProviderType.OPENAI, OpenAIModelProvider)
             ModelProviderRegistry.register_provider(ProviderType.GOOGLE, GeminiModelProvider)
 
@@ -100,7 +101,7 @@ class TestIntelligentFallback:
 
         with patch.dict(os.environ, {"OPENAI_API_KEY": "", "GEMINI_API_KEY": "test-key"}, clear=False):
             # Clear and register providers
-            ModelProviderRegistry._instance = None
+            ModelProviderRegistry.reset_for_testing()
             ModelProviderRegistry.register_provider(ProviderType.OPENAI, OpenAIModelProvider)
             ModelProviderRegistry.register_provider(ProviderType.GOOGLE, GeminiModelProvider)
 
@@ -118,6 +119,9 @@ class TestIntelligentFallback:
             patch("config.DEFAULT_MODEL", "auto"),
             patch.dict(os.environ, {"OPENAI_API_KEY": "sk-test-key", "GEMINI_API_KEY": ""}, clear=False),
         ):
+            # Reset registry using the public API method
+            ModelProviderRegistry.reset_for_testing()
+
             # Register only OpenAI provider for this test
             from providers.openai_provider import OpenAIModelProvider
 

@@ -145,7 +145,6 @@ class SimulatorTestFactory:
         """Create test files and return their paths."""
         simulator.setup_test_files()
         files = simulator.test_files.copy()
-
         if additional_files:
             for filename, content in additional_files.items():
                 file_path = simulator.create_additional_test_file(filename, content)
@@ -185,7 +184,6 @@ class TestSimulatorFactory:
 
         # Create conversation test configuration
         conv_test = SimulatorTestFactory.create_conversation_test(simulator, tool_name, model, [files["python"]])
-
         assert conv_test["tool_name"] == tool_name
         assert conv_test["model"] == model
         assert len(conv_test["files"]) == 1
@@ -210,7 +208,6 @@ class TestSimulatorFactory:
         # Test deduplication logic
         unique_files = set(initial_paths + continuation_paths)
         has_duplicates = len(unique_files) < len(initial_paths + continuation_paths)
-
         if should_deduplicate:
             assert has_duplicates  # Should have duplicates to deduplicate
         else:
@@ -221,8 +218,6 @@ class TestSimulatorFactory:
         self, simulator_factory, initial_tool, continuation_tool, should_preserve_context
     ):
         """Test continuation validation with factory pattern."""
-        _ = simulator_factory(verbose=False)
-
         # Mock successful responses
         response1 = "Initial response content"
         continuation_id = "test-123"

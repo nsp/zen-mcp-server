@@ -139,16 +139,26 @@ class TestConversationMemory:
         assert success is False
 
     @patch.dict(os.environ, {"GEMINI_API_KEY": "test-key", "OPENAI_API_KEY": ""}, clear=False)
-    def test_build_conversation_history(self, project_path):
+    def test_build_conversation_history(self, tmp_path):
         """Test building conversation history format with files and speaker identification"""
+        from providers.base import ProviderType
         from providers.registry import ModelProviderRegistry
+
+        # Ensure registry is clean and providers are registered
+        ModelProviderRegistry.reset_for_testing()
+
+        # Register a provider so the default model is available
+        # We'll use Gemini since that's the default model in conftest.py
+        from providers.gemini import GeminiModelProvider
+
+        ModelProviderRegistry.register_provider(ProviderType.GOOGLE, GeminiModelProvider)
 
         ModelProviderRegistry.clear_cache()
 
         # Create real test files to test actual file embedding functionality
-        main_file = project_path / "main.py"
-        readme_file = project_path / "docs" / "readme.md"
-        examples_dir = project_path / "examples"
+        main_file = tmp_path / "main.py"
+        readme_file = tmp_path / "docs" / "readme.md"
+        examples_dir = tmp_path / "examples"
         examples_file = examples_dir / "example.py"
 
         # Create directories and files
@@ -699,7 +709,16 @@ class TestConversationFlow:
         import os
         import tempfile
 
+        from providers.base import ProviderType
         from providers.registry import ModelProviderRegistry
+
+        # Ensure registry is clean and providers are registered
+        ModelProviderRegistry.reset_for_testing()
+
+        # Register a provider so the default model is available
+        from providers.gemini import GeminiModelProvider
+
+        ModelProviderRegistry.register_provider(ProviderType.GOOGLE, GeminiModelProvider)
 
         ModelProviderRegistry.clear_cache()
 

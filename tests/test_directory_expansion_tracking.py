@@ -26,10 +26,10 @@ class TestDirectoryExpansionTracking:
         return ChatTool()
 
     @pytest.fixture
-    def temp_directory_with_files(self, project_path):
+    def temp_directory_with_files(self, tmp_path):
         """Create a temporary directory with multiple files"""
         # Create within the project path to avoid security restrictions
-        temp_dir = project_path / "test_temp_dir"
+        temp_dir = tmp_path / "test_temp_dir"
         temp_dir.mkdir(exist_ok=True)
         temp_path = temp_dir
 

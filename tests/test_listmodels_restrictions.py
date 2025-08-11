@@ -18,6 +18,11 @@ class TestListModelsRestrictions(unittest.TestCase):
         # Clear any existing registry state
         ModelProviderRegistry.clear_cache()
 
+        # Clear any cached restriction service to ensure clean state
+        import utils.model_restrictions
+
+        utils.model_restrictions._restriction_service = None
+
         # Create mock OpenRouter provider
         self.mock_openrouter = MagicMock(spec=ModelProvider)
         self.mock_openrouter.provider_type = ProviderType.OPENROUTER
@@ -30,6 +35,10 @@ class TestListModelsRestrictions(unittest.TestCase):
     def tearDown(self):
         """Clean up after tests."""
         ModelProviderRegistry.clear_cache()
+        # Clear any cached restriction service to ensure clean state
+        import utils.model_restrictions
+
+        utils.model_restrictions._restriction_service = None
         # Clean up environment variables
         for key in ["OPENROUTER_ALLOWED_MODELS", "OPENROUTER_API_KEY", "GEMINI_API_KEY"]:
             os.environ.pop(key, None)
@@ -63,7 +72,7 @@ class TestListModelsRestrictions(unittest.TestCase):
         mock_registry = MagicMock()
         mock_registry_class.return_value = mock_registry
 
-        # Mock resolve method - return config for aliased models, None for others
+        # Mock resolve method - return config for all models to show them in output
         def resolve_side_effect(model_name):
             if "opus" in model_name.lower():
                 config = MagicMock()
@@ -75,11 +84,21 @@ class TestListModelsRestrictions(unittest.TestCase):
                 config.model_name = "anthropic/claude-sonnet-4-20240229"
                 config.context_window = 200000
                 return config
-            return None  # No config for models without aliases
+            elif "deepseek" in model_name.lower():
+                config = MagicMock()
+                config.model_name = "deepseek/deepseek-r1-0528:free"
+                config.context_window = 100000
+                return config
+            elif "qwen" in model_name.lower():
+                config = MagicMock()
+                config.model_name = "qwen/qwen3-235b-a22b-04-28:free"
+                config.context_window = 100000
+                return config
+            return None
 
         mock_registry.resolve.side_effect = resolve_side_effect
 
-        # Mock provider registry
+        # Mock provider registry - need to handle both single and keyword arguments
         def get_provider_side_effect(provider_type, force_new=False):
             if provider_type == ProviderType.OPENROUTER:
                 return self.mock_openrouter
@@ -127,10 +146,8 @@ class TestListModelsRestrictions(unittest.TestCase):
         result_json = json.loads(result_text)
         result = result_json["content"]
 
-        # Parse the output
+        # Parse the output to find OpenRouter models
         lines = result.split("\n")
-
-        # Check that OpenRouter section exists
         openrouter_section_found = False
         openrouter_models = []
         in_openrouter_section = False
@@ -138,8 +155,11 @@ class TestListModelsRestrictions(unittest.TestCase):
         for line in lines:
             if "OpenRouter" in line and "✅" in line:
                 openrouter_section_found = True
-            elif "Available Models" in line and openrouter_section_found:
+            elif "**Available Models**" in line and openrouter_section_found:
                 in_openrouter_section = True
+            elif in_openrouter_section and line.startswith("## "):
+                # We've reached a new section, stop parsing OpenRouter models
+                in_openrouter_section = False
             elif in_openrouter_section and line.strip().startswith("- "):
                 # Extract model name from various line formats:
                 # - `model-name` → `full-name` (context)

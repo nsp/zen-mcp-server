@@ -21,6 +21,7 @@ class ProviderType(Enum):
     """Supported model provider types."""
 
     GOOGLE = "google"
+    VERTEX_AI = "vertex_ai"
     OPENAI = "openai"
     XAI = "xai"
     OPENROUTER = "openrouter"

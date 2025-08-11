@@ -391,12 +391,14 @@ def configure_providers():
     from providers.openai_provider import OpenAIModelProvider
     from providers.openrouter import OpenRouterProvider
     from providers.xai import XAIModelProvider
+    from providers.vertex_ai import VertexAIModelProvider
     from utils.model_restrictions import get_restriction_service
 
     valid_providers = []
     has_native_apis = False
     has_openrouter = False
     has_custom = False
+    has_vertex_ai = False
 
     # Check for Gemini API key
     gemini_key = os.getenv("GEMINI_API_KEY")
@@ -431,6 +433,20 @@ def configure_providers():
         valid_providers.append("DIAL")
         has_native_apis = True
         logger.info("DIAL API key found - DIAL models available")
+
+    # Check for Vertex AI configuration
+    vertex_project_id = os.getenv("VERTEX_AI_PROJECT_ID")
+    if vertex_project_id:
+        try:
+            # Test if we can initialize Vertex AI provider
+            test_provider = VertexAIModelProvider()
+            valid_providers.append(f"Vertex AI (Project: {vertex_project_id})")
+            has_vertex_ai = True
+            has_native_apis = True
+            logger.info(f"Vertex AI configured for project: {vertex_project_id}")
+        except Exception as e:
+            logger.warning(f"Vertex AI configuration found but failed to initialize: {e}")
+            logger.info("Ensure 'gcloud auth application-default login' is configured or set GOOGLE_APPLICATION_CREDENTIALS")
 
     # Check for OpenRouter API key
     openrouter_key = os.getenv("OPENROUTER_API_KEY")
@@ -473,6 +489,8 @@ def configure_providers():
             ModelProviderRegistry.register_provider(ProviderType.XAI, XAIModelProvider)
         if dial_key and dial_key != "your_dial_api_key_here":
             ModelProviderRegistry.register_provider(ProviderType.DIAL, DIALModelProvider)
+        if has_vertex_ai:
+            ModelProviderRegistry.register_provider(ProviderType.VERTEX_AI, VertexAIModelProvider)
 
     # 2. Custom provider second (for local/private models)
     if has_custom:
@@ -496,6 +514,7 @@ def configure_providers():
             "- OPENAI_API_KEY for OpenAI models\n"
             "- XAI_API_KEY for X.AI GROK models\n"
             "- DIAL_API_KEY for DIAL models\n"
+            "- VERTEX_AI_PROJECT_ID for Google Vertex AI models (uses ADC)\n"
             "- OPENROUTER_API_KEY for OpenRouter (multiple models)\n"
             "- CUSTOM_API_URL for local models (Ollama, vLLM, etc.)"
         )

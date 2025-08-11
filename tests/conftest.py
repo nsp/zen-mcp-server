@@ -98,6 +98,12 @@ def event_loop():
 
 
 @pytest.fixture
+def project_path(tmp_path):
+    """Temporary directory fixture for file operation tests."""
+    return tmp_path
+
+
+@pytest.fixture
 def mock_provider_factory():
     """Factory fixture for creating mock providers with various configurations."""
 

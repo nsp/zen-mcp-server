@@ -6,14 +6,11 @@ import logging
 import mimetypes
 import os
 import threading
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import Any, Optional, Union
 
-if TYPE_CHECKING:
-    import google.auth
-    from google.api_core import exceptions, retry
-    from google.cloud import aiplatform
-    from PIL import Image
-    from vertexai.generative_models import Content, GenerationConfig, GenerativeModel, Part
+from google.api_core import exceptions, retry
+from google.cloud import aiplatform
+from vertexai.generative_models import Content, GenerationConfig, GenerativeModel, Part
 
 from .base import (
     ModelCapabilities,
@@ -33,11 +30,11 @@ class VertexAIModelProvider(ModelProvider):
     def __init__(self, api_key: str = "", **kwargs):
         """Initialize with lazy initialization pattern."""
         super().__init__(api_key, **kwargs)
-        
+
         # Lazy initialization state
         self._initialized = False
         self._init_lock = threading.Lock()
-        
+
         # Will be set during lazy initialization
         self.credentials = None
         self.project_id = None
@@ -78,17 +75,17 @@ class VertexAIModelProvider(ModelProvider):
         """Initialize provider resources on first use."""
         if self._initialized:
             return
-            
+
         with self._init_lock:
             # Double-check pattern
             if self._initialized:
                 return
-                
+
             try:
                 # Import required modules
                 import google.auth
                 from google.cloud import aiplatform
-                
+
                 # Auto-detect credentials and project
                 self.credentials, self.project_id = google.auth.default()
 
@@ -135,7 +132,7 @@ class VertexAIModelProvider(ModelProvider):
 
                 logger.info(f"Initialized Vertex AI provider with {len(self.models)} models")
                 self._initialized = True
-                
+
             except Exception as e:
                 logger.error(f"Failed to initialize Vertex AI provider: {e}")
                 raise
@@ -181,6 +178,7 @@ class VertexAIModelProvider(ModelProvider):
 
         try:
             from vertexai.generative_models import GenerativeModel
+
             model = GenerativeModel(self._resolve_model_name(model_name))
             return model.count_tokens(text).total_tokens
         except Exception:
@@ -230,9 +228,7 @@ class VertexAIModelProvider(ModelProvider):
         **kwargs,
     ) -> ModelResponse:
         """Generate with Gemini models."""
-        from google.api_core import exceptions, retry
-        from vertexai.generative_models import Content, GenerationConfig, GenerativeModel, Part
-        
+
         resolved_model = self._resolve_model_name(model_name)
 
         # Create model with system instruction
@@ -273,14 +269,14 @@ class VertexAIModelProvider(ModelProvider):
             maximum=32.0,
             multiplier=2.0,
         )
-        
+
         @retry_decorator
         def _generate_with_retry():
             return model.generate_content(
                 Content(role="user", parts=content_parts),
                 generation_config=config,
             )
-        
+
         response = _generate_with_retry()
 
         # Extract usage
@@ -312,8 +308,7 @@ class VertexAIModelProvider(ModelProvider):
         **kwargs,
     ) -> ModelResponse:
         """Generate with Claude models via Vertex AI."""
-        from google.cloud import aiplatform
-        
+
         resolved_model = self._resolve_model_name(model_name)
 
         # Use aiplatform Model for Claude
@@ -374,7 +369,7 @@ class VertexAIModelProvider(ModelProvider):
         try:
             from PIL import Image
             from vertexai.generative_models import Part
-            
+
             if isinstance(image, str):
                 if image.startswith("data:"):
                     # Data URL - extract base64 data
